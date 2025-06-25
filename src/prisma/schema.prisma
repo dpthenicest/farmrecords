@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  records   Record[]
+  categories Category[]
+  animals   Animal[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        CategoryType
+  description String?
+  color       String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records     Record[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Animal {
+  id          String   @id @default(cuid())
+  name        String
+  type        AnimalType
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  records     Record[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("animals")
+}
+
+model Record {
+  id         String   @id @default(cuid())
+  type       RecordType
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title      String
+  unitPrice  Float
+  quantity   Int      @default(1)
+  total      Float
+  note       String?
+  date       DateTime @default(now())
+  animalId   String?
+  animal     Animal?  @relation(fields: [animalId], references: [id], onDelete: SetNull)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("records")
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum AnimalType {
+  GOAT
+  FOWL
+  CATFISH
+}
+
+enum RecordType {
+  INCOME
+  EXPENSE
+} 
