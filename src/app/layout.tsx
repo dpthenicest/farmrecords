@@ -1,5 +1,6 @@
-import "../globals.css"
+import "./globals.css"
 import { ReactNode, Suspense } from "react"
+import Loading from "./loading"
 
 export const metadata = {
   title: "Farm Records",
@@ -8,9 +9,9 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body>
-        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+        <Suspense fallback={<Loading />}>
           {children}
         </Suspense>
       </body>
