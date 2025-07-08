@@ -10,82 +10,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model: Represents a user of the farm records application.
+// Each user can have their own categories, animals, and records.
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  records   Record[]
-  categories Category[]
-  animals   Animal[]
+  id         String     @id @default(cuid())
+  email      String     @unique // Unique email for user login
+  name       String?    // Optional user name
+  password   String     // Hashed password for security
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  records    Record[]   // Relation to records owned by this user
+  categories Category[] // Relation to categories created by this user
+  animals    Animal[]   // Relation to animals owned by this user
 
-  @@map("users")
+  @@map("users") // Maps the model name to the database table name
 }
 
+// Category model: Represents a type of income or expense category defined by a user.
+// This allows users to customize their financial tracking.
 model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  type        CategoryType
-  description String?
-  color       String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  records     Record[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String       @id @default(cuid())
+  name        String       // Category name (unique per user via composite constraint)
+  type        CategoryType // Enum: INCOME or EXPENSE
+  description String?      // Optional description for the category
+  color       String?      // Optional color code for UI representation
+  userId      String       // Foreign key to the User model
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their categories
+  records     Record[]     // Relation to records associated with this category
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
+  // Ensures that a category name is unique only for a specific user,
+  // allowing different users to have categories with the same name.
+  @@unique([name, userId], name: "unique_category_for_user")
+  @@index([userId]) // Index for foreign key performance
   @@map("categories")
 }
 
+// Animal model: Represents an individual animal on the farm.
+// Each animal belongs to a user and has a specific type.
 model Animal {
-  id          String   @id @default(cuid())
-  name        String
-  type        AnimalType
-  description String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  records     Record[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String     @id @default(cuid())
+  name        String     // Name of the animal (e.g., "Babe", "Daisy")
+  type        AnimalType // Enum: specifies the species of the animal
+  description String?    // Optional description or notes about the animal
+  userId      String     // Foreign key to the User model
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their animals
+  records     Record[]   // Relation to records associated with this animal
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
+  @@index([userId]) // Index for foreign key performance
   @@map("animals")
 }
 
+// Record model: Represents a single financial or operational record (income/expense).
+// This model is normalized by removing the 'total' field.
 model Record {
-  id         String   @id @default(cuid())
-  type       RecordType
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  title      String
-  unitPrice  Float
-  quantity   Int      @default(1)
-  total      Float
-  note       String?
-  date       DateTime @default(now())
-  animalId   String?
-  animal     Animal?  @relation(fields: [animalId], references: [id], onDelete: SetNull)
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String     @id @default(cuid())
+  type        CategoryType // Changed from RecordType to CategoryType
+  categoryId  String     // Foreign key to the Category model
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Deleting a category deletes its records
+  unitPrice   Decimal    @db.Decimal(10, 2) // Price per unit, using Decimal for financial precision
+  quantity    Int        @default(1) // Number of units, defaults to 1
+  note        String?    // Optional detailed notes about the record
+  date        DateTime   @default(now()) // The specific date of the income/expense event
+  animalId    String?    // Optional foreign key to the Animal model (for animal-specific records)
+  animal      Animal?    @relation(fields: [animalId], references: [id], onDelete: SetNull) // If an animal is deleted, set animalId to null
+  userId      String     // Foreign key to the User model (who created this record)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their records
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
+  @@index([categoryId]) // Index for foreign key performance
+  @@index([userId]) // Index for foreign key performance
+  @@index([animalId]) // Index for optional foreign key performance
+  @@index([date]) // Index for date-based queries
   @@map("records")
 }
 
+// Enum for types of categories (e.g., for financial classification)
 enum CategoryType {
   INCOME
   EXPENSE
 }
 
+// Enum for various animal types on a farm.
+// Expanded to include more common farm animals.
 enum AnimalType {
   GOAT
-  FOWL
+  FOWL // Can be chickens, ducks, etc.
   CATFISH
+  COW
+  PIG
+  SHEEP
+  HORSE
+  RABBIT
+  DUCK
+  TURKEY
 }
-
-enum RecordType {
-  INCOME
-  EXPENSE
-} 

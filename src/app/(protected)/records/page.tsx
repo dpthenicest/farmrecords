@@ -131,7 +131,6 @@ export default function RecordsPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium">Date</th>
-                  <th className="text-left py-3 px-4 font-medium">Title</th>
                   <th className="text-left py-3 px-4 font-medium">Type</th>
                   <th className="text-left py-3 px-4 font-medium">Category</th>
                   <th className="text-left py-3 px-4 font-medium">Animal</th>
@@ -142,7 +141,6 @@ export default function RecordsPage() {
               <tbody>
                 <tr className="border-b hover:bg-gray-50">
                   <td className="py-3 px-4">2024-01-15</td>
-                  <td className="py-3 px-4">Goat Sale</td>
                   <td className="py-3 px-4">
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                       Income
@@ -155,7 +153,6 @@ export default function RecordsPage() {
                     <ActionMenu
                       onView={() => handleViewRecord({ 
                         id: 1, 
-                        title: 'Goat Sale',
                         type: 'INCOME',
                         date: '2024-01-15',
                         category: 'Sale of Goats',
@@ -167,7 +164,6 @@ export default function RecordsPage() {
                       })}
                       onEdit={() => handleEditRecord({ 
                         id: 1, 
-                        title: 'Goat Sale',
                         type: 'INCOME',
                         categoryId: 'sale-goats',
                         date: '2024-01-15',
@@ -177,26 +173,23 @@ export default function RecordsPage() {
                         total: 2500,
                         note: 'Sold 1 goat for breeding'
                       })}
-                      onDelete={() => handleDeleteClick({ id: 1, title: 'Goat Sale' })}
+                      onDelete={() => handleDeleteClick({ id: 1 })}
                     />
                   </td>
                 </tr>
                 <tr className="border-b hover:bg-gray-50">
                   <td className="py-3 px-4">2024-01-14</td>
-                  <td className="py-3 px-4">Feed Purchase</td>
                   <td className="py-3 px-4">
                     <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
                       Expense
                     </span>
                   </td>
                   <td className="py-3 px-4">Feed</td>
-                  <td className="py-3 px-4">-</td>
                   <td className="py-3 px-4 font-medium text-red-600">-$450</td>
                   <td className="py-3 px-4">
                     <ActionMenu
                       onView={() => handleViewRecord({ 
                         id: 2, 
-                        title: 'Feed Purchase',
                         type: 'EXPENSE',
                         date: '2024-01-14',
                         category: 'Feed',
@@ -208,7 +201,6 @@ export default function RecordsPage() {
                       })}
                       onEdit={() => handleEditRecord({ 
                         id: 2, 
-                        title: 'Feed Purchase',
                         type: 'EXPENSE',
                         categoryId: 'feed',
                         date: '2024-01-14',
@@ -218,13 +210,12 @@ export default function RecordsPage() {
                         total: 450,
                         note: 'Purchased feed for all animals'
                       })}
-                      onDelete={() => handleDeleteClick({ id: 2, title: 'Feed Purchase' })}
+                      onDelete={() => handleDeleteClick({ id: 2 })}
                     />
                   </td>
                 </tr>
                 <tr className="border-b hover:bg-gray-50">
                   <td className="py-3 px-4">2024-01-13</td>
-                  <td className="py-3 px-4">Chicken Sale</td>
                   <td className="py-3 px-4">
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                       Income
@@ -237,7 +228,6 @@ export default function RecordsPage() {
                     <ActionMenu
                       onView={() => handleViewRecord({ 
                         id: 3, 
-                        title: 'Chicken Sale',
                         type: 'INCOME',
                         date: '2024-01-13',
                         category: 'Sale of Fowls',
@@ -249,7 +239,6 @@ export default function RecordsPage() {
                       })}
                       onEdit={() => handleEditRecord({ 
                         id: 3, 
-                        title: 'Chicken Sale',
                         type: 'INCOME',
                         categoryId: 'sale-fowls',
                         date: '2024-01-13',
@@ -259,7 +248,7 @@ export default function RecordsPage() {
                         total: 800,
                         note: 'Sold eggs from layer chickens'
                       })}
-                      onDelete={() => handleDeleteClick({ id: 3, title: 'Chicken Sale' })}
+                      onDelete={() => handleDeleteClick({ id: 3 })}
                     />
                   </td>
                 </tr>

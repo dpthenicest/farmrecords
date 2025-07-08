@@ -18,7 +18,6 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
   const [formData, setFormData] = useState({
     type: 'INCOME' as RecordType,
     categoryId: '',
-    title: '',
     unitPrice: '',
     quantity: '1',
     total: '',
@@ -29,12 +28,15 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const total = parseFloat(formData.unitPrice) * parseInt(formData.quantity)
+    let unitPrice = formData.unitPrice
+    if (formData.total && formData.quantity && parseFloat(formData.quantity) > 0) {
+      unitPrice = (parseFloat(formData.total) / parseFloat(formData.quantity)).toFixed(2)
+    }
     onSubmit({
       ...formData,
-      unitPrice: parseFloat(formData.unitPrice),
+      unitPrice: parseFloat(unitPrice),
       quantity: parseInt(formData.quantity),
-      total
+      total: parseFloat(formData.total)
     })
   }
 
@@ -49,11 +51,11 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
       title="Add New Record"
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 w-full">
         {/* Record Type */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 w-full">
           <Card 
-            className={`cursor-pointer transition-all ${
+            className={`cursor-pointer transition-all w-full ${
               formData.type === 'INCOME' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
             }`}
             onClick={() => handleInputChange('type', 'INCOME')}
@@ -65,7 +67,7 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
           </Card>
           
           <Card 
-            className={`cursor-pointer transition-all ${
+            className={`cursor-pointer transition-all w-full ${
               formData.type === 'EXPENSE' ? 'ring-2 ring-red-500 bg-red-50' : ''
             }`}
             onClick={() => handleInputChange('type', 'EXPENSE')}
@@ -77,80 +79,9 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
           </Card>
         </div>
 
-        {/* Basic Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title
-            </label>
-            <Input
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="Enter record title"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date
-            </label>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Financial Details */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Unit Price
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.unitPrice}
-              onChange={(e) => handleInputChange('unitPrice', e.target.value)}
-              placeholder="0.00"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity
-            </label>
-            <Input
-              type="number"
-              value={formData.quantity}
-              onChange={(e) => handleInputChange('quantity', e.target.value)}
-              placeholder="1"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.total || (parseFloat(formData.unitPrice) * parseInt(formData.quantity)).toString()}
-              onChange={(e) => handleInputChange('total', e.target.value)}
-              placeholder="0.00"
-              required
-            />
-          </div>
-        </div>
-
         {/* Category and Animal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <div className="w-full">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Category
             </label>
@@ -186,7 +117,7 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
             </select>
           </div>
 
-          <div>
+          <div className="w-full">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Animal (Optional)
             </label>
@@ -203,8 +134,68 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
           </div>
         </div>
 
+        {/* Financial Details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Unit Price
+            </label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.unitPrice}
+              onChange={(e) => handleInputChange('unitPrice', e.target.value)}
+              placeholder="0.00"
+              className="w-full"
+            />
+          </div>
+
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Quantity
+            </label>
+            <Input
+              type="number"
+              value={formData.quantity}
+              onChange={(e) => handleInputChange('quantity', e.target.value)}
+              placeholder="1"
+              required
+              className="w-full"
+            />
+          </div>
+
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Total
+            </label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.total || (parseFloat(formData.unitPrice) * parseInt(formData.quantity)).toString()}
+              onChange={(e) => handleInputChange('total', e.target.value)}
+              placeholder="0.00"
+              required
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        {/* Date */}
+        <div className="w-full">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date
+          </label>
+          <Input
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleInputChange('date', e.target.value)}
+            required
+            className="w-full"
+          />
+        </div>
+
         {/* Notes */}
-        <div>
+        <div className="w-full">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Notes (Optional)
           </label>
@@ -218,18 +209,20 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4">
+        <div className="flex justify-end space-x-3 pt-4 w-full">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
+            className="w-32"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={isLoading}
+            className="w-32"
           >
             {isLoading ? 'Adding...' : 'Add Record'}
           </Button>
