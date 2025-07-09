@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
   // Define public routes that don't require authentication
   const publicRoutes = ['/', '/login', '/signup']
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route))
   
-  // Check if user is authenticated (you can implement your own auth logic here)
-  const isAuthenticated = request.cookies.has('auth-token') // Replace with your auth token name
+  // Check if user is authenticated using NextAuth
+  const token = await getToken({ req: request })
+  const isAuthenticated = !!token
   
   // If user is not authenticated and trying to access protected routes
   if (!isAuthenticated && !isPublicRoute) {

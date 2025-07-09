@@ -1,7 +1,7 @@
 'use client'
-
 import { ReactNode } from "react"
 import dynamic from 'next/dynamic'
+import { UIProvider } from '@/providers/ui-provider'
 
 // Dynamically import client components to prevent hydration issues
 const Sidebar = dynamic(() => import('@/components/layout/sidebar'), {
@@ -30,16 +30,18 @@ interface ClientLayoutProps {
   children: ReactNode
 }
 
-export function ClientLayout({ children }: ClientLayoutProps) {
+export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
-    <div className="h-screen flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 bg-gray-50 p-6 overflow-auto">
-          {children}
-        </main>
+    <UIProvider>
+      <div className="h-screen flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <main className="flex-1 bg-gray-50 p-6 overflow-auto">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </UIProvider>
   )
 } 

@@ -1,9 +1,8 @@
 import "./globals.css"
 import { ReactNode, Suspense } from "react"
 import Loading from "./loading"
-import { SessionProvider } from "next-auth/react"
+import SessionProviderWrapper from "@/components/session-provider-wrapper"
 import { MainDataProvider } from "@/providers/main-data-provider"
-import { UIProvider } from "@/providers/ui-provider"
 
 export const metadata = {
   title: "Farm Records",
@@ -14,15 +13,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
+        <SessionProviderWrapper>
           <MainDataProvider>
-            <UIProvider>
-              <Suspense fallback={<Loading />}>
-                {children}
-              </Suspense>
-            </UIProvider>
+            <Suspense fallback={<Loading />}>
+              {children}
+            </Suspense>
           </MainDataProvider>
-        </SessionProvider>
+        </SessionProviderWrapper>
       </body>
     </html>
   )
