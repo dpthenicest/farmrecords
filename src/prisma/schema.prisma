@@ -47,12 +47,22 @@ model Category {
   @@map("categories")
 }
 
+// AnimalType model: Represents a type/species of animal (e.g., Goat, Fowl, Catfish)
+model AnimalType {
+  id   String  @id @default(cuid())
+  type String  @unique // e.g., "GOAT", "FOWL", "CATFISH"
+  animals Animal[]
+
+  @@map("animal_types")
+}
+
 // Animal model: Represents an individual animal on the farm.
 // Each animal belongs to a user and has a specific type.
 model Animal {
   id          String     @id @default(cuid())
   name        String     // Name of the animal (e.g., "Babe", "Daisy")
-  type        AnimalType // Enum: specifies the species of the animal
+  animalTypeId String   // Foreign key to the AnimalType model
+  animalType   AnimalType @relation(fields: [animalTypeId], references: [id], onDelete: Restrict)
   description String?    // Optional description or notes about the animal
   userId      String     // Foreign key to the User model
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their animals
@@ -61,6 +71,7 @@ model Animal {
   updatedAt   DateTime   @updatedAt
 
   @@index([userId]) // Index for foreign key performance
+  @@index([animalTypeId]) // Index for animal type
   @@map("animals")
 }
 
@@ -93,19 +104,4 @@ model Record {
 enum CategoryType {
   INCOME
   EXPENSE
-}
-
-// Enum for various animal types on a farm.
-// Expanded to include more common farm animals.
-enum AnimalType {
-  GOAT
-  FOWL // Can be chickens, ducks, etc.
-  CATFISH
-  COW
-  PIG
-  SHEEP
-  HORSE
-  RABBIT
-  DUCK
-  TURKEY
 }

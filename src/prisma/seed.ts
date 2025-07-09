@@ -1,8 +1,29 @@
-import { PrismaClient, CategoryType } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 async function main() {
+  // Create animal types
+  const animalTypes = [
+    { type: 'GOAT' },
+    { type: 'FOWL' },
+    { type: 'CATFISH' },
+    { type: 'COW' },
+    { type: 'PIG' },
+    { type: 'SHEEP' },
+    { type: 'HORSE' },
+    { type: 'RABBIT' },
+    { type: 'DUCK' },
+    { type: 'TURKEY' },
+  ]
+  for (const animalType of animalTypes) {
+    await prisma.animalType.upsert({
+      where: { type: animalType.type },
+      update: {},
+      create: animalType,
+    })
+  }
+
   // Create expense categories
   const expenseCategories = [
     { name: 'Animal Purchase', description: 'Buying new goats, fowls, catfish' },
@@ -40,11 +61,11 @@ async function main() {
   // Create expense categories
   for (const category of expenseCategories) {
     await prisma.category.upsert({
-      where: { name: category.name },
+      where: { unique_category_for_user: { name: category.name, userId: user.id } },
       update: {},
       create: {
         name: category.name,
-        type: CategoryType.EXPENSE,
+        type: 'EXPENSE',
         description: category.description,
         userId: user.id,
       },
@@ -54,11 +75,11 @@ async function main() {
   // Create income categories
   for (const category of incomeCategories) {
     await prisma.category.upsert({
-      where: { name: category.name },
+      where: { unique_category_for_user: { name: category.name, userId: user.id } },
       update: {},
       create: {
         name: category.name,
-        type: CategoryType.INCOME,
+        type: 'INCOME',
         description: category.description,
         userId: user.id,
       },
