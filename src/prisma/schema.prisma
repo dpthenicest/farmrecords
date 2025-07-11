@@ -1,5 +1,5 @@
 // This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// learn more about it in the docs: https://pris.lyd/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -26,31 +26,45 @@ model User {
   @@map("users") // Maps the model name to the database table name
 }
 
+// CategoryType model: Represents a type of category (e.g., Income, Expense).
+// This is now a table to allow dynamic management of category types.
+model CategoryType {
+  id        String     @id @default(cuid())
+  name      String     @unique // e.g., "Income", "Expense"
+  description String?    // Optional description for the category type
+  categories Category[] // Relation to categories associated with this type
+
+  @@map("category_types")
+}
+
 // Category model: Represents a type of income or expense category defined by a user.
 // This allows users to customize their financial tracking.
 model Category {
-  id          String       @id @default(cuid())
-  name        String       // Category name (unique per user via composite constraint)
-  type        CategoryType // Enum: INCOME or EXPENSE
-  description String?      // Optional description for the category
-  color       String?      // Optional color code for UI representation
-  userId      String       // Foreign key to the User model
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their categories
-  records     Record[]     // Relation to records associated with this category
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  name           String       // Category name (unique per user via composite constraint)
+  categoryTypeId String       // Foreign key to the new CategoryType model
+  categoryType   CategoryType @relation(fields: [categoryTypeId], references: [id], onDelete: Restrict) // Deleting a type with categories is restricted
+  description    String?      // Optional description for the category
+  color          String?      // Optional color code for UI representation
+  userId         String       // Foreign key to the User model
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their categories
+  records        Record[]     // Relation to records associated with this category
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   // Ensures that a category name is unique only for a specific user,
   // allowing different users to have categories with the same name.
   @@unique([name, userId], name: "unique_category_for_user")
   @@index([userId]) // Index for foreign key performance
+  @@index([categoryTypeId]) // Index for foreign key performance
   @@map("categories")
 }
 
 // AnimalType model: Represents a type/species of animal (e.g., Goat, Fowl, Catfish)
 model AnimalType {
-  id   String  @id @default(cuid())
-  type String  @unique // e.g., "GOAT", "FOWL", "CATFISH"
+  id      String   @id @default(cuid())
+  type    String   @unique // e.g., "GOAT", "FOWL", "CATFISH"
+  emoji   String   // New column for storing an emoji representing the animal type
   animals Animal[]
 
   @@map("animal_types")
@@ -59,16 +73,16 @@ model AnimalType {
 // Animal model: Represents an individual animal on the farm.
 // Each animal belongs to a user and has a specific type.
 model Animal {
-  id          String     @id @default(cuid())
-  name        String     // Name of the animal (e.g., "Babe", "Daisy")
-  animalTypeId String   // Foreign key to the AnimalType model
+  id           String     @id @default(cuid())
+  name         String     // Name of the animal (e.g., "Babe", "Daisy")
+  animalTypeId String     // Foreign key to the AnimalType model
   animalType   AnimalType @relation(fields: [animalTypeId], references: [id], onDelete: Restrict)
-  description String?    // Optional description or notes about the animal
-  userId      String     // Foreign key to the User model
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their animals
-  records     Record[]   // Relation to records associated with this animal
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  description  String?    // Optional description or notes about the animal
+  userId       String     // Foreign key to the User model
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their animals
+  records      Record[]   // Relation to records associated with this animal
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@index([userId]) // Index for foreign key performance
   @@index([animalTypeId]) // Index for animal type
@@ -79,7 +93,7 @@ model Animal {
 // This model is normalized by removing the 'total' field.
 model Record {
   id          String     @id @default(cuid())
-  type        CategoryType // Changed from RecordType to CategoryType
+  // Removed 'type' field as it can be derived from the associated Category's type
   categoryId  String     // Foreign key to the Category model
   category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Deleting a category deletes its records
   unitPrice   Decimal    @db.Decimal(10, 2) // Price per unit, using Decimal for financial precision
@@ -98,10 +112,4 @@ model Record {
   @@index([animalId]) // Index for optional foreign key performance
   @@index([date]) // Index for date-based queries
   @@map("records")
-}
-
-// Enum for types of categories (e.g., for financial classification)
-enum CategoryType {
-  INCOME
-  EXPENSE
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { notFound } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Search, Filter } from "lucide-react"
@@ -10,40 +10,11 @@ import { AddAnimalModal } from "@/components/modals/add-animal-modal"
 import { ViewAnimalModal } from "@/components/modals/view-animal-modal"
 import { EditAnimalModal } from "@/components/modals/edit-animal-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import { useMainData } from '@/providers/main-data-provider'
 
 interface AnimalTypeClientProps {
   params: {
     type: string
-  }
-}
-
-const animalTypeData = {
-  goats: {
-    title: "Goats",
-    description: "Manage your goat livestock",
-    icon: "🐐",
-    sampleAnimals: [
-      { name: "Goat Batch A", count: 15, description: "Young goats for breeding" },
-      { name: "Goat Batch B", count: 8, description: "Mature goats for milk" }
-    ]
-  },
-  fowls: {
-    title: "Fowls", 
-    description: "Manage your poultry",
-    icon: "🐔",
-    sampleAnimals: [
-      { name: "Fowl Layer 2024", count: 50, description: "Egg-laying chickens" },
-      { name: "Broiler Batch", count: 30, description: "Meat chickens" }
-    ]
-  },
-  catfish: {
-    title: "Catfish",
-    description: "Manage your fish farming",
-    icon: "🐟", 
-    sampleAnimals: [
-      { name: "Catfish Pond 1", count: 200, description: "Freshwater catfish" },
-      { name: "Catfish Pond 2", count: 150, description: "Growing catfish" }
-    ]
   }
 }
 
@@ -55,8 +26,28 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   const [selectedAnimal, setSelectedAnimal] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const {
+    animals,
+    animalTypes,
+    fetchAnimals,
+    fetchAnimalTypes,
+    addAnimal,
+    updateAnimal,
+    deleteAnimal,
+    loading,
+    error
+  } = useMainData()
+
+  useEffect(() => {
+    fetchAnimals()
+    fetchAnimalTypes()
+  }, [fetchAnimals, fetchAnimalTypes])
+
+  // Filter animals by type param
+  const filteredAnimals = animals.filter(a => a.animalTypeId === params.type)
+
   const slug = params.type
-  const data = animalTypeData[slug as keyof typeof animalTypeData]
+  const data = animalTypes.find(type => type.slug === slug)
 
   if (!data) {
     notFound()
@@ -65,9 +56,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   const handleAddAnimal = async (data: any) => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to add animal
-      console.log('Adding animal:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await addAnimal(data)
       setIsAddAnimalModalOpen(false)
     } catch (error) {
       console.error('Error adding animal:', error)
@@ -79,9 +68,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   const handleUpdateAnimal = async (data: any) => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to update animal
-      console.log('Updating animal:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await updateAnimal(selectedAnimal?.id, data)
       setIsEditAnimalModalOpen(false)
       setSelectedAnimal(null)
     } catch (error) {
@@ -94,9 +81,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   const handleDeleteAnimal = async () => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to delete animal
-      console.log('Deleting animal:', selectedAnimal)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await deleteAnimal(selectedAnimal?.id)
       setIsDeleteModalOpen(false)
       setSelectedAnimal(null)
     } catch (error) {
@@ -164,8 +149,8 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
 
       {/* Animals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data.sampleAnimals.map((animal, index) => (
-          <Card key={index}>
+        {filteredAnimals.map((animal, index) => (
+          <Card key={animal.id}>
             <CardHeader>
               <CardTitle>{animal.name}</CardTitle>
               <CardDescription>{data.title.slice(0, -1)} • {animal.count} animals</CardDescription>
@@ -179,34 +164,21 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleViewAnimal({
-                        id: index + 1,
-                        name: animal.name,
-                        type: slug.toUpperCase(),
-                        description: animal.description
-                      })}
+                      onClick={() => handleViewAnimal(animal)}
                     >
                       View Details
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleEditAnimal({
-                        id: index + 1,
-                        name: animal.name,
-                        type: slug.toUpperCase(),
-                        description: animal.description
-                      })}
+                      onClick={() => handleEditAnimal(animal)}
                     >
                       Edit
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => handleDeleteClick({
-                        id: index + 1,
-                        name: animal.name
-                      })}
+                      onClick={() => handleDeleteClick(animal)}
                     >
                       Delete
                     </Button>

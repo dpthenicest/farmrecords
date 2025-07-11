@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useMainData } from '@/providers/main-data-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Search, Filter } from "lucide-react"
@@ -19,13 +20,33 @@ export default function RecordsPage() {
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const {
+    records,
+    categories,
+    animals,
+    animalTypes,
+    fetchRecords,
+    fetchCategories,
+    fetchAnimals,
+    fetchAnimalTypes,
+    addRecord,
+    updateRecord,
+    deleteRecord,
+    loading,
+    error
+  } = useMainData()
+
+  useEffect(() => {
+    fetchRecords()
+    fetchCategories()
+    fetchAnimals()
+    fetchAnimalTypes()
+  }, [fetchRecords, fetchCategories, fetchAnimals, fetchAnimalTypes])
+
   const handleAddRecord = async (data: any) => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to add record
-      console.log('Adding record:', data)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await addRecord(data)
       setIsAddRecordModalOpen(false)
     } catch (error) {
       console.error('Error adding record:', error)
@@ -34,13 +55,23 @@ export default function RecordsPage() {
     }
   }
 
+  const handleUpdateRecord = async (data: any) => {
+    setIsLoading(true)
+    try {
+      await updateRecord(selectedRecord?.id, data)
+      setIsEditRecordModalOpen(false)
+      setSelectedRecord(null)
+    } catch (error) {
+      console.error('Error updating record:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleDeleteRecord = async () => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to delete record
-      console.log('Deleting record:', selectedRecord)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await deleteRecord(selectedRecord?.id)
       setIsDeleteModalOpen(false)
       setSelectedRecord(null)
     } catch (error) {
@@ -58,22 +89,6 @@ export default function RecordsPage() {
   const handleEditRecord = (record: any) => {
     setSelectedRecord(record)
     setIsEditRecordModalOpen(true)
-  }
-
-  const handleUpdateRecord = async (data: any) => {
-    setIsLoading(true)
-    try {
-      // TODO: Implement API call to update record
-      console.log('Updating record:', data)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsEditRecordModalOpen(false)
-      setSelectedRecord(null)
-    } catch (error) {
-      console.error('Error updating record:', error)
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleDeleteClick = (record: any) => {
@@ -139,119 +154,26 @@ export default function RecordsPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">2024-01-15</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Income
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">Sale of Goats</td>
-                  <td className="py-3 px-4">Goat Batch A</td>
-                  <td className="py-3 px-4 font-medium text-green-600">+$2,500</td>
-                  <td className="py-3 px-4">
-                    <ActionMenu
-                      onView={() => handleViewRecord({ 
-                        id: 1, 
-                        type: 'INCOME',
-                        date: '2024-01-15',
-                        category: 'Sale of Goats',
-                        animal: 'Goat Batch A',
-                        unitPrice: 2500,
-                        quantity: 1,
-                        total: 2500,
-                        note: 'Sold 1 goat for breeding'
-                      })}
-                      onEdit={() => handleEditRecord({ 
-                        id: 1, 
-                        type: 'INCOME',
-                        categoryId: 'sale-goats',
-                        date: '2024-01-15',
-                        animalId: 'goat-batch-a',
-                        unitPrice: 2500,
-                        quantity: 1,
-                        total: 2500,
-                        note: 'Sold 1 goat for breeding'
-                      })}
-                      onDelete={() => handleDeleteClick({ id: 1 })}
-                    />
-                  </td>
-                </tr>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">2024-01-14</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
-                      Expense
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">Feed</td>
-                  <td className="py-3 px-4 font-medium text-red-600">-$450</td>
-                  <td className="py-3 px-4">
-                    <ActionMenu
-                      onView={() => handleViewRecord({ 
-                        id: 2, 
-                        type: 'EXPENSE',
-                        date: '2024-01-14',
-                        category: 'Feed',
-                        animal: null,
-                        unitPrice: 450,
-                        quantity: 1,
-                        total: 450,
-                        note: 'Purchased feed for all animals'
-                      })}
-                      onEdit={() => handleEditRecord({ 
-                        id: 2, 
-                        type: 'EXPENSE',
-                        categoryId: 'feed',
-                        date: '2024-01-14',
-                        animalId: '',
-                        unitPrice: 450,
-                        quantity: 1,
-                        total: 450,
-                        note: 'Purchased feed for all animals'
-                      })}
-                      onDelete={() => handleDeleteClick({ id: 2 })}
-                    />
-                  </td>
-                </tr>
-                <tr className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">2024-01-13</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Income
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">Sale of Fowls</td>
-                  <td className="py-3 px-4">Fowl Layer 2024</td>
-                  <td className="py-3 px-4 font-medium text-green-600">+$800</td>
-                  <td className="py-3 px-4">
-                    <ActionMenu
-                      onView={() => handleViewRecord({ 
-                        id: 3, 
-                        type: 'INCOME',
-                        date: '2024-01-13',
-                        category: 'Sale of Fowls',
-                        animal: 'Fowl Layer 2024',
-                        unitPrice: 800,
-                        quantity: 1,
-                        total: 800,
-                        note: 'Sold eggs from layer chickens'
-                      })}
-                      onEdit={() => handleEditRecord({ 
-                        id: 3, 
-                        type: 'INCOME',
-                        categoryId: 'sale-fowls',
-                        date: '2024-01-13',
-                        animalId: 'fowl-layer-2024',
-                        unitPrice: 800,
-                        quantity: 1,
-                        total: 800,
-                        note: 'Sold eggs from layer chickens'
-                      })}
-                      onDelete={() => handleDeleteClick({ id: 3 })}
-                    />
-                  </td>
-                </tr>
+                {records.map((record: any) => (
+                  <tr key={record.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">{record.date}</td>
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                        Income
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">{record.category}</td>
+                    <td className="py-3 px-4">{record.animal}</td>
+                    <td className="py-3 px-4 font-medium text-green-600">${record.total}</td>
+                    <td className="py-3 px-4">
+                      <ActionMenu
+                        onView={() => handleViewRecord(record)}
+                        onEdit={() => handleEditRecord(record)}
+                        onDelete={() => handleDeleteClick(record)}
+                      />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

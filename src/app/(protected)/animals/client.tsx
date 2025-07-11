@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Search, Filter } from "lucide-react"
@@ -9,6 +9,7 @@ import { AddAnimalModal } from "@/components/modals/add-animal-modal"
 import { ViewAnimalModal } from "@/components/modals/view-animal-modal"
 import { EditAnimalModal } from "@/components/modals/edit-animal-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import { useMainData } from '@/providers/main-data-provider'
 
 export default function AnimalsClient() {
   const [isAddAnimalModalOpen, setIsAddAnimalModalOpen] = useState(false)
@@ -18,12 +19,24 @@ export default function AnimalsClient() {
   const [selectedAnimal, setSelectedAnimal] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const {
+    animals,
+    fetchAnimals,
+    addAnimal,
+    updateAnimal,
+    deleteAnimal,
+    loading,
+    error
+  } = useMainData()
+
+  useEffect(() => {
+    fetchAnimals()
+  }, [fetchAnimals])
+
   const handleAddAnimal = async (data: any) => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to add animal
-      console.log('Adding animal:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await addAnimal(data)
       setIsAddAnimalModalOpen(false)
     } catch (error) {
       console.error('Error adding animal:', error)
@@ -35,9 +48,7 @@ export default function AnimalsClient() {
   const handleUpdateAnimal = async (data: any) => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to update animal
-      console.log('Updating animal:', data)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await updateAnimal(selectedAnimal?.id, data)
       setIsEditAnimalModalOpen(false)
       setSelectedAnimal(null)
     } catch (error) {
@@ -50,9 +61,7 @@ export default function AnimalsClient() {
   const handleDeleteAnimal = async () => {
     setIsLoading(true)
     try {
-      // TODO: Implement API call to delete animal
-      console.log('Deleting animal:', selectedAnimal)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await deleteAnimal(selectedAnimal?.id)
       setIsDeleteModalOpen(false)
       setSelectedAnimal(null)
     } catch (error) {
@@ -117,158 +126,45 @@ export default function AnimalsClient() {
 
       {/* Animals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Goat Batch A</CardTitle>
-            <CardDescription>Goat • 15 animals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">Description: Young goats for breeding</p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Added: Jan 2024</span>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewAnimal({
-                      id: 1,
-                      name: 'Goat Batch A',
-                      type: 'GOAT',
-                      description: 'Young goats for breeding'
-                    })}
-                  >
-                    View Details
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditAnimal({
-                      id: 1,
-                      name: 'Goat Batch A',
-                      type: 'GOAT',
-                      description: 'Young goats for breeding'
-                    })}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteClick({
-                      id: 1,
-                      name: 'Goat Batch A'
-                    })}
-                  >
-                    Delete
-                  </Button>
+        {animals.map((animal) => (
+          <Card key={animal.id}>
+            <CardHeader>
+              <CardTitle>{animal.name}</CardTitle>
+              <CardDescription>{animal.type} • {animal.quantity} animals</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">Description: {animal.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Added: {new Date(animal.createdAt).toLocaleDateString()}</span>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewAnimal(animal)}
+                    >
+                      View Details
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditAnimal(animal)}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteClick(animal)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Fowl Layer 2024</CardTitle>
-            <CardDescription>Fowl • 50 animals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">Description: Egg-laying chickens</p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Added: Dec 2023</span>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewAnimal({
-                      id: 2,
-                      name: 'Fowl Layer 2024',
-                      type: 'FOWL',
-                      description: 'Egg-laying chickens'
-                    })}
-                  >
-                    View Details
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditAnimal({
-                      id: 2,
-                      name: 'Fowl Layer 2024',
-                      type: 'FOWL',
-                      description: 'Egg-laying chickens'
-                    })}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteClick({
-                      id: 2,
-                      name: 'Fowl Layer 2024'
-                    })}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Catfish Pond 1</CardTitle>
-            <CardDescription>Catfish • 200 animals</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">Description: Freshwater catfish</p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">Added: Nov 2023</span>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewAnimal({
-                      id: 3,
-                      name: 'Catfish Pond 1',
-                      type: 'CATFISH',
-                      description: 'Freshwater catfish'
-                    })}
-                  >
-                    View Details
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditAnimal({
-                      id: 3,
-                      name: 'Catfish Pond 1',
-                      type: 'CATFISH',
-                      description: 'Freshwater catfish'
-                    })}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteClick({
-                      id: 3,
-                      name: 'Catfish Pond 1'
-                    })}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Modals */}

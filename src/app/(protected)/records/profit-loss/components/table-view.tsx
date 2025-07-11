@@ -1,9 +1,28 @@
 import React from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useMainData } from '@/providers/main-data-provider'
 
-export default function ProfitLossTableView({ batches = [] }) {
-  // TODO: Fetch and map animal batch profit/loss data
+export default function ProfitLossTableView() {
+  const { animals, records } = useMainData()
+
+  // Aggregate profit/loss by animal batch
+  const batches = animals.map(animal => {
+    const animalRecords = records.filter(r => r.animalId === animal.id)
+    const income = animalRecords.filter(r => r.type === 'INCOME').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const expenses = animalRecords.filter(r => r.type === 'EXPENSE').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const net = income - expenses
+    return {
+      id: animal.id,
+      name: animal.name,
+      description: animal.description,
+      income,
+      expenses,
+      net,
+      status: net >= 0 ? 'Profit' : 'Loss',
+    }
+  })
+
   return (
     <Card>
       <CardHeader>
@@ -16,7 +35,6 @@ export default function ProfitLossTableView({ batches = [] }) {
             <thead>
               <tr className="border-b">
                 <th className="text-left py-3 px-4 font-medium">Batch</th>
-                <th className="text-left py-3 px-4 font-medium">Time Frame</th>
                 <th className="text-left py-3 px-4 font-medium">Income</th>
                 <th className="text-left py-3 px-4 font-medium">Expenses</th>
                 <th className="text-left py-3 px-4 font-medium">Net</th>
@@ -25,21 +43,20 @@ export default function ProfitLossTableView({ batches = [] }) {
               </tr>
             </thead>
             <tbody>
-              {/* Example row */}
-              <tr className="border-b hover:bg-gray-50">
-                <td className="py-3 px-4 font-semibold">Goat Batch A</td>
-                <td className="py-3 px-4">Jan 2024 - Mar 2024</td>
-                <td className="py-3 px-4 text-green-600 font-bold">$2,500</td>
-                <td className="py-3 px-4 text-red-600 font-bold">$1,200</td>
-                <td className="py-3 px-4 text-green-700 font-bold">$1,300</td>
-                <td className="py-3 px-4">
-                  <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Profit</span>
-                </td>
-                <td className="py-3 px-4">
-                  <Button variant="outline" size="sm">View</Button>
-                </td>
-              </tr>
-              {/* More rows... */}
+              {batches.map(batch => (
+                <tr key={batch.id} className="border-b hover:bg-gray-50">
+                  <td className="py-3 px-4 font-semibold">{batch.name}</td>
+                  <td className="py-3 px-4 text-green-600 font-bold">${batch.income.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-red-600 font-bold">${batch.expenses.toLocaleString()}</td>
+                  <td className={"py-3 px-4 font-bold " + (batch.net >= 0 ? 'text-green-700' : 'text-red-700')}>${batch.net.toLocaleString()}</td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-block px-3 py-1 rounded-full ${batch.net >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs font-semibold`}>{batch.status}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Button variant="outline" size="sm">View</Button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
