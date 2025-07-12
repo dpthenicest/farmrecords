@@ -18,12 +18,14 @@ export interface Category {
 export interface AnimalType {
   id: string
   type: string
+  emoji: string
 }
 
 export interface Animal {
   id: string
   name: string
   animalTypeId: string
+  animalType?: AnimalType
   description?: string | null
   userId: string
   createdAt: string

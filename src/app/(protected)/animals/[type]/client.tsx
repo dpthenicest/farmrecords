@@ -2,6 +2,7 @@
 
 import { notFound } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useMainData } from '@/providers/main-data-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Search, Filter } from "lucide-react"
@@ -10,7 +11,6 @@ import { AddAnimalModal } from "@/components/modals/add-animal-modal"
 import { ViewAnimalModal } from "@/components/modals/view-animal-modal"
 import { EditAnimalModal } from "@/components/modals/edit-animal-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
-import { useMainData } from '@/providers/main-data-provider'
 
 interface AnimalTypeClientProps {
   params: {
@@ -46,17 +46,17 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   // Filter animals by type param
   const filteredAnimals = animals.filter(a => a.animalTypeId === params.type)
 
-  const slug = params.type
-  const data = animalTypes.find(type => type.slug === slug)
+  // Find the animal type data
+  const animalType = animalTypes.find(type => type.type.toLowerCase() === params.type.toLowerCase())
 
-  if (!data) {
+  if (!animalType) {
     notFound()
   }
 
   const handleAddAnimal = async (data: any) => {
     setIsLoading(true)
     try {
-      await addAnimal(data)
+      await addAnimal({ ...data, animalTypeId: animalType.id })
       setIsAddAnimalModalOpen(false)
     } catch (error) {
       console.error('Error adding animal:', error)
@@ -110,10 +110,10 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <span className="text-3xl">{data.icon}</span>
+          <span className="text-3xl">{animalType.emoji}</span>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
-            <p className="text-gray-600">{data.description}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}s</h1>
+            <p className="text-gray-600">Manage your {animalType.type.toLowerCase()} livestock</p>
           </div>
         </div>
         <Button 
@@ -121,7 +121,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
           onClick={() => setIsAddAnimalModalOpen(true)}
         >
           <Plus className="w-4 h-4" />
-          <span>Add {data.title.slice(0, -1)}</span>
+          <span>Add {animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</span>
         </Button>
       </div>
 
@@ -129,14 +129,14 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
-          <CardDescription>Search and filter your {data.title.toLowerCase()}</CardDescription>
+          <CardDescription>Search and filter your {animalType.type.toLowerCase()}s</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex space-x-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder={`Search ${data.title.toLowerCase()}...`} className="pl-10" />
+                <Input placeholder={`Search ${animalType.type.toLowerCase()}s...`} className="pl-10" />
               </div>
             </div>
             <Button variant="outline" className="flex items-center space-x-2">
@@ -149,17 +149,17 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
 
       {/* Animals Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAnimals.map((animal, index) => (
+        {filteredAnimals.map((animal) => (
           <Card key={animal.id}>
             <CardHeader>
               <CardTitle>{animal.name}</CardTitle>
-              <CardDescription>{data.title.slice(0, -1)} • {animal.count} animals</CardDescription>
+              <CardDescription>{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">{animal.description}</p>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Added: Jan 2024</span>
+                  <span className="text-sm text-gray-500">Added: {new Date(animal.createdAt).toLocaleDateString()}</span>
                   <div className="flex space-x-2">
                     <Button 
                       variant="outline" 
@@ -227,10 +227,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteAnimal}
         title="Delete Animal"
-        message={`Are you sure you want to delete "${selectedAnimal?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
+        message={`Are you sure you want to delete ${selectedAnimal?.name}? This action cannot be undone.`}
         isLoading={isLoading}
       />
     </div>

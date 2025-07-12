@@ -8,13 +8,29 @@ export interface User {
   updatedAt: Date
 }
 
+export interface CategoryType {
+  id: string
+  name: string
+  description: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface Category {
   id: string
   name: string
-  type: CategoryType
+  categoryTypeId: string
+  categoryType: CategoryType
   description: string | null
-  color: string | null
   userId: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface AnimalType {
+  id: string
+  type: string
+  emoji: string
   createdAt: Date
   updatedAt: Date
 }
@@ -22,7 +38,8 @@ export interface Category {
 export interface Animal {
   id: string
   name: string
-  type: AnimalType
+  animalTypeId: string
+  animalType: AnimalType
   description: string | null
   userId: string
   createdAt: Date
@@ -39,7 +56,7 @@ export interface Record {
   quantity: number
   total: number
   note: string | null
-  date: Date
+  date: Date | null
   animalId: string | null
   animal: Animal | null
   userId: string
@@ -79,20 +96,19 @@ export interface CreateRecordData {
   quantity: number
   total: number
   note?: string
-  date: Date
+  date?: Date
   animalId?: string
 }
 
 export interface CreateCategoryData {
   name: string
-  type: CategoryType
+  categoryTypeId: string
   description?: string
-  color?: string
 }
 
 export interface CreateAnimalData {
   name: string
-  type: AnimalType
+  animalTypeId: string
   description?: string
 }
 

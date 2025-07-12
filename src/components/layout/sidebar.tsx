@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useMainData } from '@/providers/main-data-provider'
 import { 
   LayoutDashboard, 
   FileText, 
@@ -25,44 +26,55 @@ interface SidebarItem {
   }[]
 }
 
-const sidebarItems: SidebarItem[] = [
-  {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />
-  },
-  {
-    title: 'Records',
-    href: '/records',
-    icon: <FileText className="w-5 h-5" />,
-    subItems: [
-      { title: 'All Records', href: '/records' },
-      { title: 'Income', href: '/records/income' },
-      { title: 'Expenses', href: '/records/expenses' },
-      { title: 'Profit/Loss', href: '/records/profit-loss' }
-    ]
-  },
-  {
-    title: 'Animals',
-    href: '/animals',
-    icon: <Users className="w-5 h-5" />,
-    subItems: [
-      { title: 'All Animals', href: '/animals' },
-      { title: 'Goats', href: '/animals/goats' },
-      { title: 'Fowls', href: '/animals/fowls' },
-      { title: 'Catfish', href: '/animals/catfish' }
-    ]
-  }
-]
-
 function Sidebar() {
   const pathname = usePathname()
   const [expandedItems, setExpandedItems] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
+  const { animalTypes, fetchAnimalTypes } = useMainData()
 
   useEffect(() => {
     setMounted(true)
+    fetchAnimalTypes()
   }, [])
+
+  // Generate animal subitems dynamically based on available animal types
+  const generateAnimalSubItems = () => {
+    const baseSubItems = [
+      { title: 'All Animals', href: '/animals' }
+    ]
+    
+    const animalTypeSubItems = animalTypes.map(animalType => ({
+      title: animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase() + 's',
+      href: `/animals/${animalType.type.toLowerCase()}`
+    }))
+    
+    return [...baseSubItems, ...animalTypeSubItems]
+  }
+
+  const sidebarItems: SidebarItem[] = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: <LayoutDashboard className="w-5 h-5" />
+    },
+    {
+      title: 'Records',
+      href: '/records',
+      icon: <FileText className="w-5 h-5" />,
+      subItems: [
+        { title: 'All Records', href: '/records' },
+        { title: 'Income', href: '/records/income' },
+        { title: 'Expenses', href: '/records/expenses' },
+        { title: 'Profit/Loss', href: '/records/profit-loss' }
+      ]
+    },
+    {
+      title: 'Animals',
+      href: '/animals',
+      icon: <Users className="w-5 h-5" />,
+      subItems: generateAnimalSubItems()
+    }
+  ]
 
   const toggleExpanded = (title: string) => {
     setExpandedItems(prev => 

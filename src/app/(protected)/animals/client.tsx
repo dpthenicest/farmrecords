@@ -130,7 +130,7 @@ export default function AnimalsClient() {
           <Card key={animal.id}>
             <CardHeader>
               <CardTitle>{animal.name}</CardTitle>
-              <CardDescription>{animal.type} • {animal.quantity} animals</CardDescription>
+              <CardDescription>{animal.animalType?.type || 'Unknown'} • {animal.animalType?.emoji || '🐾'}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
