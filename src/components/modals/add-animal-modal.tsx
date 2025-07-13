@@ -67,7 +67,7 @@ export function AddAnimalModal({ isOpen, onClose, onSubmit, isLoading = false, f
       const quantity = parseInt(formData.quantity)
       if (!isNaN(purchasePrice) && !isNaN(quantity)) {
         finalTotalPrice = (purchasePrice * quantity).toFixed(2)
-      }
+    }
     }
     
     onSubmit({
@@ -127,28 +127,28 @@ export function AddAnimalModal({ isOpen, onClose, onSubmit, isLoading = false, f
         <form onSubmit={handleSubmit} className="space-y-6 w-full">
           {/* Animal Type Selection */}
           {!hideAnimalTypeSelection && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Animal Type
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                {animalTypes.map((animalType) => (
-                  <Card 
-                    key={animalType.id}
-                    className={`cursor-pointer transition-all w-full ${
-                      formData.animalTypeId === animalType.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                    }`}
-                    onClick={() => handleInputChange('animalTypeId', animalType.id)}
-                  >
-                    <CardHeader className="pb-3 text-center">
-                      <div className="text-2xl mb-2">{animalType.emoji}</div>
-                      <CardTitle className="text-sm">{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</CardTitle>
-                      <CardDescription className="text-xs">{animalType.type.toLowerCase()} livestock</CardDescription>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Animal Type
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+              {animalTypes.map((animalType) => (
+                <Card 
+                  key={animalType.id}
+                  className={`cursor-pointer transition-all w-full ${
+                    formData.animalTypeId === animalType.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                  }`}
+                  onClick={() => handleInputChange('animalTypeId', animalType.id)}
+                >
+                  <CardHeader className="pb-3 text-center">
+                    <div className="text-2xl mb-2">{animalType.emoji}</div>
+                    <CardTitle className="text-sm">{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</CardTitle>
+                    <CardDescription className="text-xs">{animalType.type.toLowerCase()} livestock</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
+          </div>
           )}
 
           {/* Basic Information */}
