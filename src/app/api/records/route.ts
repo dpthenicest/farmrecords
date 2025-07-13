@@ -3,16 +3,30 @@ import { createRecord, getRecords } from '../../../services/records';
 
 export async function POST(req: Request) {
   try {
-    const { type, categoryId, unitPrice, quantity, note, date, animalId, userId } = await req.json();
-    if (!type || !categoryId || !unitPrice || !userId) {
+    const { categoryId, unitPrice, quantity, note, date, animalId, userId } = await req.json();
+    if (!categoryId || !unitPrice || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    const data: any = { type, categoryId, unitPrice, quantity, note, animalId, userId };
-    if (date) data.date = date;
-    const record = await createRecord({ type, categoryId, unitPrice, quantity, note, date, animalId, userId });
+    
+    // Prepare data with proper date conversion
+    const data: any = { 
+      categoryId, 
+      unitPrice: parseFloat(unitPrice), 
+      quantity: parseInt(quantity), 
+      note, 
+      animalId, 
+      userId 
+    };
+    
+    // Convert date string to Date object if provided
+    if (date) {
+      data.date = new Date(date);
+    }
+    
+    const record = await createRecord(data);
     return NextResponse.json(record, { status: 201 });
   } catch (e) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: `Server error: ${e}` }, { status: 500 });
   }
 }
 
@@ -28,7 +42,7 @@ export async function GET(req: Request) {
     const where: any = {};
     if (userId) where.userId = userId;
     if (animalId) where.animalId = animalId;
-    if (categoryType) where.type = categoryType;
+    if (categoryType) where.category = { categoryType: { name: categoryType } };
     if (animalTypeId) {
       where.animal = { animalTypeId };
     }

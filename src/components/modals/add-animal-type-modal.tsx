@@ -11,9 +11,10 @@ interface AddAnimalTypeModalProps {
   onClose: () => void
   onSubmit: (data: any) => void
   isLoading?: boolean
+  selectedAnimalType?: string
 }
 
-export function AddAnimalTypeModal({ isOpen, onClose, onSubmit, isLoading = false }: AddAnimalTypeModalProps) {
+export function AddAnimalTypeModal({ isOpen, onClose, onSubmit, isLoading = false, selectedAnimalType }: AddAnimalTypeModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,7 +47,7 @@ export function AddAnimalTypeModal({ isOpen, onClose, onSubmit, isLoading = fals
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add New Animal Type"
+      title={selectedAnimalType ? `Create a ${selectedAnimalType.toLowerCase()} batch` : "Add New Animal Type"}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -41,5 +41,18 @@ export async function updateAnimal(id: string, data: Partial<CreateAnimalData>) 
 }
 
 export async function deleteAnimal(id: string) {
-  return prisma.animal.delete({ where: { id } });
+  return prisma.$transaction(async (tx) => {
+    // First delete all records associated with this animal
+    await tx.record.deleteMany({
+      where: { animalId: id }
+    });
+    
+    // Then delete the animal
+    return tx.animal.delete({ 
+      where: { id },
+      include: {
+        animalType: true
+      }
+    });
+  });
 } 

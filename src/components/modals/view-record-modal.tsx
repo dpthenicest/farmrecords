@@ -3,7 +3,6 @@
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RecordType } from '@/types'
 
 interface ViewRecordModalProps {
   isOpen: boolean
@@ -22,8 +21,8 @@ export function ViewRecordModal({ isOpen, onClose, record, onEdit }: ViewRecordM
     }).format(amount)
   }
 
-  const getTypeBadge = (type: RecordType) => {
-    return type === 'INCOME' ? (
+  const getTypeBadge = (categoryType: string) => {
+    return categoryType === 'INCOME' ? (
       <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
         Income
       </span>
@@ -33,6 +32,9 @@ export function ViewRecordModal({ isOpen, onClose, record, onEdit }: ViewRecordM
       </span>
     )
   }
+
+  const totalAmount = record.unitPrice * record.quantity
+  const categoryType = record.category?.categoryType?.name || 'Unknown'
 
   return (
     <Modal
@@ -44,8 +46,8 @@ export function ViewRecordModal({ isOpen, onClose, record, onEdit }: ViewRecordM
       <div className="space-y-6">
         {/* Record Type */}
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">{record.title}</h3>
-          {getTypeBadge(record.type)}
+          <h3 className="text-lg font-semibold text-gray-900">{record.category?.name || 'Unknown Category'}</h3>
+          {getTypeBadge(categoryType)}
         </div>
 
         {/* Basic Information */}
@@ -61,13 +63,13 @@ export function ViewRecordModal({ isOpen, onClose, record, onEdit }: ViewRecordM
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Category</label>
-                <p className="text-sm text-gray-900">{record.category}</p>
+                <p className="text-sm text-gray-900">{record.category?.name || 'Unknown'}</p>
               </div>
             </div>
             {record.animal && (
               <div>
                 <label className="text-sm font-medium text-gray-500">Animal</label>
-                <p className="text-sm text-gray-900">{record.animal}</p>
+                <p className="text-sm text-gray-900">{record.animal?.name || 'Unknown'}</p>
               </div>
             )}
           </CardContent>
@@ -91,9 +93,9 @@ export function ViewRecordModal({ isOpen, onClose, record, onEdit }: ViewRecordM
               <div>
                 <label className="text-sm font-medium text-gray-500">Total Amount</label>
                 <p className={`text-sm font-semibold ${
-                  record.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                  categoryType === 'INCOME' ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {record.type === 'INCOME' ? '+' : '-'}{formatCurrency(record.total)}
+                  {categoryType === 'INCOME' ? '+' : '-'}{formatCurrency(totalAmount)}
                 </p>
               </div>
             </div>

@@ -17,7 +17,7 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">$12,345</div>
+            <div className="text-2xl font-bold text-green-600">₦12,345</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
@@ -28,7 +28,7 @@ export default function DashboardPage() {
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">$8,234</div>
+            <div className="text-2xl font-bold text-red-600">₦8,234</div>
             <p className="text-xs text-muted-foreground">+12.3% from last month</p>
           </CardContent>
         </Card>
@@ -39,7 +39,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">$4,111</div>
+            <div className="text-2xl font-bold text-blue-600">₦4,111</div>
             <p className="text-xs text-muted-foreground">+15.2% from last month</p>
           </CardContent>
         </Card>
@@ -71,7 +71,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-600">Sold 5 goats</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-green-600">+$2,500</p>
+                  <p className="font-medium text-green-600">+₦2,500</p>
                   <p className="text-sm text-gray-600">Today</p>
                 </div>
               </div>
@@ -81,7 +81,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-600">Bought animal feed</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-red-600">-$450</p>
+                  <p className="font-medium text-red-600">-₦450</p>
                   <p className="text-sm text-gray-600">Yesterday</p>
                 </div>
               </div>

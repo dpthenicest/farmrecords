@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { AddAnimalModal } from "@/components/modals/add-animal-modal"
-import { ViewAnimalModal } from "@/components/modals/view-animal-modal"
+import { ViewAnimalRecordsModal } from "@/components/modals/view-animal-records-modal"
 import { EditAnimalModal } from "@/components/modals/edit-animal-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
@@ -20,7 +20,7 @@ interface AnimalTypeClientProps {
 
 export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
   const [isAddAnimalModalOpen, setIsAddAnimalModalOpen] = useState(false)
-  const [isViewAnimalModalOpen, setIsViewAnimalModalOpen] = useState(false)
+  const [isViewAnimalRecordsModalOpen, setIsViewAnimalRecordsModalOpen] = useState(false)
   const [isEditAnimalModalOpen, setIsEditAnimalModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedAnimal, setSelectedAnimal] = useState<any>(null)
@@ -43,11 +43,11 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
     fetchAnimalTypes()
   }, [fetchAnimals, fetchAnimalTypes])
 
-  // Filter animals by type param
-  const filteredAnimals = animals.filter(a => a.animalTypeId === params.type)
-
   // Find the animal type data
   const animalType = animalTypes.find(type => type.type.toLowerCase() === params.type.toLowerCase())
+
+  // Filter animals by animal type ID
+  const filteredAnimals = animals.filter(a => a.animalTypeId === animalType?.id)
 
   if (!animalType) {
     notFound()
@@ -93,7 +93,7 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
 
   const handleViewAnimal = (animal: any) => {
     setSelectedAnimal(animal)
-    setIsViewAnimalModalOpen(true)
+    setIsViewAnimalRecordsModalOpen(true)
   }
 
   const handleEditAnimal = (animal: any) => {
@@ -196,19 +196,18 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
         onClose={() => setIsAddAnimalModalOpen(false)}
         onSubmit={handleAddAnimal}
         isLoading={isLoading}
+        forcedAnimalTypeId={animalType.id}
+        customTitle={`Add a ${animalType.type} Batch`}
+        hideAnimalTypeSelection={true}
       />
 
-      <ViewAnimalModal
-        isOpen={isViewAnimalModalOpen}
+      <ViewAnimalRecordsModal
+        isOpen={isViewAnimalRecordsModalOpen}
         onClose={() => {
-          setIsViewAnimalModalOpen(false)
+          setIsViewAnimalRecordsModalOpen(false)
           setSelectedAnimal(null)
         }}
         animal={selectedAnimal}
-        onEdit={() => {
-          setIsViewAnimalModalOpen(false)
-          setIsEditAnimalModalOpen(true)
-        }}
       />
 
       <EditAnimalModal

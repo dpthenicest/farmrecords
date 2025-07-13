@@ -26,13 +26,13 @@ export async function createAnimalPurchaseRecord(data: AnimalPurchaseRecordData)
     let animalPurchaseCategory = await prisma.category.findFirst({
       where: {
         name: 'Animal Purchase',
-        userId: data.userId
+        // userId: data.userId
       }
     });
     
     if (!animalPurchaseCategory) {
       // Get the expense category type
-      const expenseCategoryType = await prisma.categoryType.findUnique({
+      const expenseCategoryType = await prisma.categoryType.findFirst({
         where: { name: 'EXPENSE' }
       });
       

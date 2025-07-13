@@ -20,9 +20,9 @@ export default function ProfitLossTableView() {
           <tr className="border-b hover:bg-gray-50">
             <td className="px-6 py-4 whitespace-nowrap font-semibold">Goat Batch A</td>
             <td className="px-6 py-4 whitespace-nowrap">Jan 2024 - Mar 2024</td>
-            <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">$2,500</td>
-            <td className="px-6 py-4 whitespace-nowrap text-red-600 font-bold">$1,200</td>
-            <td className="px-6 py-4 whitespace-nowrap text-green-700 font-bold">$1,300</td>
+            <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">₦2,500</td>
+            <td className="px-6 py-4 whitespace-nowrap text-red-600 font-bold">₦1,200</td>
+            <td className="px-6 py-4 whitespace-nowrap text-green-700 font-bold">₦1,300</td>
             <td className="px-6 py-4 whitespace-nowrap">
               <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Profit</span>
             </td>

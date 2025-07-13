@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RecordType } from '@/types'
+import { useMainData } from '@/providers/main-data-provider'
 
 interface EditRecordModalProps {
   isOpen: boolean
@@ -16,49 +16,77 @@ interface EditRecordModalProps {
 }
 
 export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading = false }: EditRecordModalProps) {
+  const { categories, animals, fetchCategories, fetchAnimals } = useMainData()
   const [formData, setFormData] = useState({
-    type: 'INCOME' as RecordType,
     categoryId: '',
-    title: '',
     unitPrice: '',
     quantity: '1',
-    total: '',
     note: '',
     date: new Date().toISOString().split('T')[0],
-    animalId: ''
+    animalId: '',
+    totalPrice: '' // Added totalPrice field
   })
+
+  // Fetch categories and animals when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+      fetchAnimals()
+    }
+  }, [isOpen, fetchCategories, fetchAnimals])
 
   // Update form data when record changes
   useEffect(() => {
     if (record) {
       setFormData({
-        type: record.type || 'INCOME',
         categoryId: record.categoryId || '',
-        title: record.title || '',
         unitPrice: record.unitPrice?.toString() || '',
         quantity: record.quantity?.toString() || '1',
-        total: record.total?.toString() || '',
         note: record.note || '',
         date: record.date || new Date().toISOString().split('T')[0],
-        animalId: record.animalId || ''
+        animalId: record.animalId || '',
+        totalPrice: record.totalPrice?.toString() || '' // Initialize totalPrice
       })
     }
   }, [record])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const total = parseFloat(formData.unitPrice) * parseInt(formData.quantity)
+    // Calculate unit price if only total price is provided
+    let finalUnitPrice = formData.unitPrice
+    if (!formData.unitPrice && formData.totalPrice && formData.quantity) {
+      const totalPrice = parseFloat(formData.totalPrice)
+      const quantity = parseInt(formData.quantity)
+      if (!isNaN(totalPrice) && !isNaN(quantity) && quantity > 0) {
+        finalUnitPrice = (totalPrice / quantity).toFixed(2)
+      }
+    }
+    // Calculate total price if only unit price is provided
+    let finalTotalPrice = formData.totalPrice
+    if (!formData.totalPrice && formData.unitPrice && formData.quantity) {
+      const unitPrice = parseFloat(formData.unitPrice)
+      const quantity = parseInt(formData.quantity)
+      if (!isNaN(unitPrice) && !isNaN(quantity)) {
+        finalTotalPrice = (unitPrice * quantity).toFixed(2)
+      }
+    }
     onSubmit({
       ...formData,
-      unitPrice: parseFloat(formData.unitPrice),
+      unitPrice: parseFloat(finalUnitPrice || '0'),
       quantity: parseInt(formData.quantity),
-      total
+      totalPrice: parseFloat(finalTotalPrice || '0'),
+      date: new Date(formData.date),
+      // userId: session?.user?.id // Uncomment if you have session
     })
   }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
+
+  // Group categories by type
+  const incomeCategories = categories.filter(cat => cat.categoryType?.name === 'INCOME')
+  const expenseCategories = categories.filter(cat => cat.categoryType?.name === 'EXPENSE')
 
   return (
     <Modal
@@ -68,62 +96,90 @@ export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading =
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Record Type */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card 
-            className={`cursor-pointer transition-all ${
-              formData.type === 'INCOME' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-            }`}
-            onClick={() => handleInputChange('type', 'INCOME')}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-green-600">Income</CardTitle>
-              <CardDescription>Money received</CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card 
-            className={`cursor-pointer transition-all ${
-              formData.type === 'EXPENSE' ? 'ring-2 ring-red-500 bg-red-50' : ''
-            }`}
-            onClick={() => handleInputChange('type', 'EXPENSE')}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-red-600">Expense</CardTitle>
-              <CardDescription>Money spent</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Basic Information */}
+        {/* Category and Animal */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title
+              Category
             </label>
-            <Input
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="Enter record title"
+            <select
+              value={formData.categoryId}
+              onChange={(e) => handleInputChange('categoryId', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
-            />
+            >
+              <option value="">Select a category</option>
+              
+              {/* Income Categories */}
+              {incomeCategories.length > 0 && (
+                <optgroup label="Income Categories">
+                  {incomeCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Expense Categories */}
+              {expenseCategories.length > 0 && (
+                <optgroup label="Expense Categories">
+                  {expenseCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Fallback options if no categories exist */}
+              {categories.length === 0 && (
+                <>
+                  <optgroup label="Income Categories">
+                    <option value="sale-goats">Sale of Goats</option>
+                    <option value="sale-fowls">Sale of Fowls</option>
+                    <option value="sale-catfish">Sale of Catfish</option>
+                    <option value="manure-sales">Manure Sales</option>
+                    <option value="subsidies">Subsidies/Support</option>
+                    <option value="other-income">Other Income</option>
+                  </optgroup>
+                  <optgroup label="Expense Categories">
+                    <option value="animal-purchase">Animal Purchase</option>
+                    <option value="feed">Feed</option>
+                    <option value="drugs-vaccines">Drugs & Vaccines</option>
+                    <option value="workers-salary">Workers' Salary</option>
+                    <option value="facility-costs">Facility Costs</option>
+                    <option value="transportation">Transportation</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="miscellaneous">Miscellaneous</option>
+                  </optgroup>
+                </>
+              )}
+            </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date
+              Animal (Optional)
             </label>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
-              required
-            />
+            <select
+              value={formData.animalId}
+              onChange={(e) => handleInputChange('animalId', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select an animal</option>
+              {animals.map((animal) => (
+                <option key={animal.id} value={animal.id}>
+                  {animal.name} ({animal.animalType?.type || 'Unknown'})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         {/* Financial Details */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Unit Price
@@ -150,75 +206,19 @@ export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading =
               required
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.total || (parseFloat(formData.unitPrice) * parseInt(formData.quantity)).toString()}
-              onChange={(e) => handleInputChange('total', e.target.value)}
-              placeholder="0.00"
-              required
-            />
-          </div>
         </div>
 
-        {/* Category and Animal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={formData.categoryId}
-              onChange={(e) => handleInputChange('categoryId', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a category</option>
-              {formData.type === 'INCOME' ? (
-                <>
-                  <option value="sale-goats">Sale of Goats</option>
-                  <option value="sale-fowls">Sale of Fowls</option>
-                  <option value="sale-catfish">Sale of Catfish</option>
-                  <option value="manure-sales">Manure Sales</option>
-                  <option value="subsidies">Subsidies/Support</option>
-                  <option value="other-income">Other Income</option>
-                </>
-              ) : (
-                <>
-                  <option value="animal-purchase">Animal Purchase</option>
-                  <option value="feed">Feed</option>
-                  <option value="drugs-vaccines">Drugs & Vaccines</option>
-                  <option value="workers-salary">Workers' Salary</option>
-                  <option value="facility-costs">Facility Costs</option>
-                  <option value="transportation">Transportation</option>
-                  <option value="utilities">Utilities</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="miscellaneous">Miscellaneous</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Animal (Optional)
-            </label>
-            <select
-              value={formData.animalId}
-              onChange={(e) => handleInputChange('animalId', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select an animal</option>
-              <option value="goat-batch-a">Goat Batch A</option>
-              <option value="fowl-layer-2024">Fowl Layer 2024</option>
-              <option value="catfish-pond-1">Catfish Pond 1</option>
-            </select>
-          </div>
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date
+          </label>
+          <Input
+            type="date"
+            value={formData.date}
+            onChange={(e) => handleInputChange('date', e.target.value)}
+            required
+          />
         </div>
 
         {/* Notes */}

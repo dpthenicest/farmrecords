@@ -93,7 +93,11 @@ export async function getRecords({ where = {}, page = 1, pageSize = 10, orderBy 
       take: pageSize,
       orderBy,
       include: {
-        category: true,
+        category: {
+          include: {
+            categoryType: true
+          }
+        },
         animal: {
           include: {
             animalType: true

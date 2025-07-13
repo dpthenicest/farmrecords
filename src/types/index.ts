@@ -1,4 +1,4 @@
-import { CategoryType, AnimalType, RecordType } from '@prisma/client'
+import { CategoryType, AnimalType } from '@prisma/client'
 
 export interface User {
   id: string
@@ -48,13 +48,10 @@ export interface Animal {
 
 export interface Record {
   id: string
-  type: RecordType
   categoryId: string
   category: Category
-  title: string
   unitPrice: number
   quantity: number
-  total: number
   note: string | null
   date: Date | null
   animalId: string | null
@@ -89,15 +86,13 @@ export interface DashboardStats {
 }
 
 export interface CreateRecordData {
-  type: RecordType
   categoryId: string
-  title: string
   unitPrice: number
   quantity: number
-  total: number
   note?: string
   date?: Date
   animalId?: string
+  userId: string
 }
 
 export interface CreateCategoryData {

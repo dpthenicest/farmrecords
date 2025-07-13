@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { RecordType, CategoryType } from '@/types'
+import { useMainData } from '@/providers/main-data-provider'
 
 interface AddRecordModalProps {
   isOpen: boolean
@@ -15,34 +16,96 @@ interface AddRecordModalProps {
 }
 
 export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }: AddRecordModalProps) {
+  const { data: session } = useSession()
+  const { categories, animals, fetchCategories, fetchAnimals } = useMainData()
   const [formData, setFormData] = useState({
-    type: 'INCOME' as RecordType,
     categoryId: '',
     unitPrice: '',
     quantity: '1',
-    total: '',
+    totalPrice: '',
     note: '',
     date: new Date().toISOString().split('T')[0],
     animalId: ''
   })
 
+  // Fetch categories and animals when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+      fetchAnimals()
+    }
+  }, [isOpen, fetchCategories, fetchAnimals])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    let unitPrice = formData.unitPrice
-    if (formData.total && formData.quantity && parseFloat(formData.quantity) > 0) {
-      unitPrice = (parseFloat(formData.total) / parseFloat(formData.quantity)).toFixed(2)
+    
+    // Calculate unit price if only total price is provided
+    let finalUnitPrice = formData.unitPrice
+    if (!formData.unitPrice && formData.totalPrice && formData.quantity) {
+      const totalPrice = parseFloat(formData.totalPrice)
+      const quantity = parseInt(formData.quantity)
+      if (!isNaN(totalPrice) && !isNaN(quantity) && quantity > 0) {
+        finalUnitPrice = (totalPrice / quantity).toFixed(2)
+      }
     }
+    
+    // Calculate total price if only unit price is provided
+    let finalTotalPrice = formData.totalPrice
+    if (!formData.totalPrice && formData.unitPrice && formData.quantity) {
+      const unitPrice = parseFloat(formData.unitPrice)
+      const quantity = parseInt(formData.quantity)
+      if (!isNaN(unitPrice) && !isNaN(quantity)) {
+        finalTotalPrice = (unitPrice * quantity).toFixed(2)
+      }
+    }
+    
     onSubmit({
       ...formData,
-      unitPrice: parseFloat(unitPrice),
+      unitPrice: parseFloat(finalUnitPrice || '0'),
       quantity: parseInt(formData.quantity),
-      total: parseFloat(formData.total)
+      totalPrice: parseFloat(finalTotalPrice || '0'),
+      userId: session?.user?.id // Include userId from session
     })
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value }
+      
+      // Auto-calculate total price when unit price or quantity changes
+      if (field === 'unitPrice' && value && newData.quantity) {
+        const unitPrice = parseFloat(value)
+        const quantity = parseInt(newData.quantity)
+        if (!isNaN(unitPrice) && !isNaN(quantity)) {
+          newData.totalPrice = (unitPrice * quantity).toFixed(2)
+        }
+      }
+      
+      // Auto-calculate unit price when total price changes
+      if (field === 'totalPrice' && value && newData.quantity) {
+        const totalPrice = parseFloat(value)
+        const quantity = parseInt(newData.quantity)
+        if (!isNaN(totalPrice) && !isNaN(quantity) && quantity > 0) {
+          newData.unitPrice = (totalPrice / quantity).toFixed(2)
+        }
+      }
+      
+      // Auto-calculate total price when quantity changes (if unit price exists)
+      if (field === 'quantity' && value && newData.unitPrice) {
+        const unitPrice = parseFloat(newData.unitPrice)
+        const quantity = parseInt(value)
+        if (!isNaN(unitPrice) && !isNaN(quantity)) {
+          newData.totalPrice = (unitPrice * quantity).toFixed(2)
+        }
+      }
+      
+      return newData
+    })
   }
+
+  // Group categories by type
+  const incomeCategories = categories.filter(cat => cat.categoryType?.name === 'INCOME')
+  const expenseCategories = categories.filter(cat => cat.categoryType?.name === 'EXPENSE')
 
   return (
     <Modal
@@ -52,33 +115,6 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-6 w-full">
-        {/* Record Type */}
-        <div className="grid grid-cols-2 gap-4 w-full">
-          <Card 
-            className={`cursor-pointer transition-all w-full ${
-              formData.type === 'INCOME' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-            }`}
-            onClick={() => handleInputChange('type', 'INCOME')}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-green-600">Income</CardTitle>
-              <CardDescription>Money received</CardDescription>
-            </CardHeader>
-          </Card>
-          
-          <Card 
-            className={`cursor-pointer transition-all w-full ${
-              formData.type === 'EXPENSE' ? 'ring-2 ring-red-500 bg-red-50' : ''
-            }`}
-            onClick={() => handleInputChange('type', 'EXPENSE')}
-          >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-red-600">Expense</CardTitle>
-              <CardDescription>Money spent</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
         {/* Category and Animal */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
           <div className="w-full">
@@ -92,26 +128,51 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
               required
             >
               <option value="">Select a category</option>
-              {formData.type === 'INCOME' ? (
+              
+              {/* Income Categories */}
+              {incomeCategories.length > 0 && (
+                <optgroup label="Income Categories">
+                  {incomeCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Expense Categories */}
+              {expenseCategories.length > 0 && (
+                <optgroup label="Expense Categories">
+                  {expenseCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              
+              {/* Fallback options if no categories exist */}
+              {categories.length === 0 && (
                 <>
-                  <option value="sale-goats">Sale of Goats</option>
-                  <option value="sale-fowls">Sale of Fowls</option>
-                  <option value="sale-catfish">Sale of Catfish</option>
-                  <option value="manure-sales">Manure Sales</option>
-                  <option value="subsidies">Subsidies/Support</option>
-                  <option value="other-income">Other Income</option>
-                </>
-              ) : (
-                <>
-                  <option value="animal-purchase">Animal Purchase</option>
-                  <option value="feed">Feed</option>
-                  <option value="drugs-vaccines">Drugs & Vaccines</option>
-                  <option value="workers-salary">Workers' Salary</option>
-                  <option value="facility-costs">Facility Costs</option>
-                  <option value="transportation">Transportation</option>
-                  <option value="utilities">Utilities</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="miscellaneous">Miscellaneous</option>
+                  <optgroup label="Income Categories">
+                    <option value="sale-goats">Sale of Goats</option>
+                    <option value="sale-fowls">Sale of Fowls</option>
+                    <option value="sale-catfish">Sale of Catfish</option>
+                    <option value="manure-sales">Manure Sales</option>
+                    <option value="subsidies">Subsidies/Support</option>
+                    <option value="other-income">Other Income</option>
+                  </optgroup>
+                  <optgroup label="Expense Categories">
+                    <option value="animal-purchase">Animal Purchase</option>
+                    <option value="feed">Feed</option>
+                    <option value="drugs-vaccines">Drugs & Vaccines</option>
+                    <option value="workers-salary">Workers' Salary</option>
+                    <option value="facility-costs">Facility Costs</option>
+                    <option value="transportation">Transportation</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="miscellaneous">Miscellaneous</option>
+                  </optgroup>
                 </>
               )}
             </select>
@@ -127,9 +188,15 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select an animal</option>
-              <option value="goat-batch-a">Goat Batch A</option>
-              <option value="fowl-layer-2024">Fowl Layer 2024</option>
-              <option value="catfish-pond-1">Catfish Pond 1</option>
+              {animals.length > 0 ? (
+                animals.map((animal) => (
+                  <option key={animal.id} value={animal.id}>
+                    {animal.name} ({animal.animalType?.type || 'Unknown'})
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>No animal batch recorded</option>
+              )}
             </select>
           </div>
         </div>
@@ -159,6 +226,7 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
               value={formData.quantity}
               onChange={(e) => handleInputChange('quantity', e.target.value)}
               placeholder="1"
+              min="1"
               required
               className="w-full"
             />
@@ -166,15 +234,14 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
 
           <div className="w-full">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total
+              Total Price
             </label>
             <Input
               type="number"
               step="0.01"
-              value={formData.total || (parseFloat(formData.unitPrice) * parseInt(formData.quantity)).toString()}
-              onChange={(e) => handleInputChange('total', e.target.value)}
+              value={formData.totalPrice}
+              onChange={(e) => handleInputChange('totalPrice', e.target.value)}
               placeholder="0.00"
-              required
               className="w-full"
             />
           </div>

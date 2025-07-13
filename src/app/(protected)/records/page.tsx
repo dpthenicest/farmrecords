@@ -158,13 +158,13 @@ export default function RecordsPage() {
                   <tr key={record.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">{record.date}</td>
                     <td className="py-3 px-4">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                        Income
+                      <span className={`px-2 py-1 bg-${record.category?.color}-100 text-${record.category?.color}-800 rounded-full text-xs`}>
+                        {record.category?.categoryType?.name || 'Unknown'}
                       </span>
                     </td>
-                    <td className="py-3 px-4">{record.category}</td>
-                    <td className="py-3 px-4">{record.animal}</td>
-                    <td className="py-3 px-4 font-medium text-green-600">${record.total}</td>
+                    <td className="py-3 px-4">{record.category?.name || 'Unknown'}</td>
+                    <td className="py-3 px-4">{record.animal?.name || 'N/A'}</td>
+                    <td className={`py-3 px-4 font-medium text-${record.category?.color}-600`}>₦{(record.unitPrice * record.quantity).toFixed(2)}</td>
                     <td className="py-3 px-4">
                       <ActionMenu
                         onView={() => handleViewRecord(record)}
@@ -217,7 +217,7 @@ export default function RecordsPage() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteRecord}
         title="Delete Record"
-        message={`Are you sure you want to delete "${selectedRecord?.title}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete the record "${selectedRecord?.category?.name || 'Unknown'}"? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"

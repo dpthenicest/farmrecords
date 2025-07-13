@@ -100,8 +100,8 @@ model Record {
   quantity    Int        @default(1) // Number of units, defaults to 1
   note        String?    // Optional detailed notes about the record
   date        DateTime   @default(now()) // The specific date of the income/expense event
-  animalId    String?    // Optional foreign key to the Animal model (for animal-specific records)
-  animal      Animal?    @relation(fields: [animalId], references: [id], onDelete: SetNull) // If an animal is deleted, set animalId to null
+  animalId    String     // Required foreign key to the Animal model (for animal-specific records)
+  animal      Animal     @relation(fields: [animalId], references: [id], onDelete: Cascade) // If an animal is deleted, delete its records
   userId      String     // Foreign key to the User model (who created this record)
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their records
   createdAt   DateTime   @default(now())

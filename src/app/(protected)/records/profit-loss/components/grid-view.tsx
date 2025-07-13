@@ -9,8 +9,8 @@ export default function ProfitLossGridView() {
   // Aggregate profit/loss by animal batch
   const batches = animals.map(animal => {
     const animalRecords = records.filter(r => r.animalId === animal.id)
-    const income = animalRecords.filter(r => r.type === 'INCOME').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
-    const expenses = animalRecords.filter(r => r.type === 'EXPENSE').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const income = animalRecords.filter(r => r.category?.categoryType?.name === 'INCOME').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const expenses = animalRecords.filter(r => r.category?.categoryType?.name === 'EXPENSE').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
     const net = income - expenses
     return {
       id: animal.id,
@@ -33,9 +33,9 @@ export default function ProfitLossGridView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">Total Income: <span className="text-green-600 font-bold">${batch.income.toLocaleString()}</span></p>
-              <p className="text-sm text-gray-600">Total Expenses: <span className="text-red-600 font-bold">${batch.expenses.toLocaleString()}</span></p>
-              <p className="text-sm text-gray-600">Net Profit: <span className={`${batch.net >= 0 ? 'text-green-700' : 'text-red-700'} font-bold`}>${batch.net.toLocaleString()}</span></p>
+                          <p className="text-sm text-gray-600">Total Income: <span className="text-green-600 font-bold">₦{batch.income.toLocaleString()}</span></p>
+            <p className="text-sm text-gray-600">Total Expenses: <span className="text-red-600 font-bold">₦{batch.expenses.toLocaleString()}</span></p>
+            <p className="text-sm text-gray-600">Net Profit: <span className={`${batch.net >= 0 ? 'text-green-700' : 'text-red-700'} font-bold`}>₦{batch.net.toLocaleString()}</span></p>
               <div className="flex items-center space-x-2 mt-2">
                 <span className={`inline-block px-3 py-1 rounded-full ${batch.net >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs font-semibold`}>{batch.status}</span>
                 <Button variant="outline" size="sm">View Details</Button>

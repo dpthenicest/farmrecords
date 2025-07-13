@@ -2,12 +2,17 @@ import { ReactNode } from "react"
 import { create } from "zustand"
 
 // --- Types based on schema.prisma ---
-export type CategoryType = "INCOME" | "EXPENSE"
+export interface CategoryType {
+  id: string
+  name: string
+  description?: string | null
+}
 
 export interface Category {
   id: string
   name: string
-  type: CategoryType
+  categoryTypeId: string
+  categoryType: CategoryType
   description?: string | null
   color?: string | null
   userId: string
@@ -34,13 +39,14 @@ export interface Animal {
 
 export interface Record {
   id: string
-  type: CategoryType
   categoryId: string
+  category: Category
   unitPrice: string
   quantity: number
   note?: string | null
   date: string
   animalId?: string | null
+  animal?: Animal | null
   userId: string
   createdAt: string
   updatedAt: string
@@ -70,11 +76,16 @@ interface MainDataState {
   fetchRecords: () => Promise<void>
   fetchCategories: () => Promise<void>
   fetchUser: () => Promise<void>
-  // Add, update, delete actions (placeholders)
+  // Add, update, delete actions
   addAnimal: (animal: Partial<Animal>) => Promise<void>
   updateAnimal: (id: string, animal: Partial<Animal>) => Promise<void>
   deleteAnimal: (id: string) => Promise<void>
-  // Repeat for other entities as needed
+  addRecord: (record: Partial<Record>) => Promise<void>
+  updateRecord: (id: string, record: Partial<Record>) => Promise<void>
+  deleteRecord: (id: string) => Promise<void>
+  addCategory: (category: Partial<Category>) => Promise<void>
+  updateCategory: (id: string, category: Partial<Category>) => Promise<void>
+  deleteCategory: (id: string) => Promise<void>
 }
 
 export const useMainData = create<MainDataState>((set, get) => ({
@@ -152,13 +163,35 @@ export const useMainData = create<MainDataState>((set, get) => ({
   updateAnimal: async (id, animal) => {
     set({ loading: true, error: null })
     try {
+      // Update the animal itself
       const res = await fetch(`/api/animals/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(animal),
+        body: JSON.stringify({
+          name: animal.name,
+          animalTypeId: animal.animalTypeId,
+          description: animal.description
+        }),
       })
       if (!res.ok) throw new Error("Failed to update animal")
+      // If purchaseRecordId is provided, update the purchase record as well
+      if ((animal as any).purchaseRecordId) {
+        const recordRes = await fetch(`/api/records/${(animal as any).purchaseRecordId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            unitPrice: (animal as any).purchasePrice,
+            quantity: (animal as any).quantity,
+            note: (animal as any).note,
+            date: (animal as any).purchaseDate,
+            totalPrice: (animal as any).totalPrice,
+            animalId: id
+          }),
+        })
+        if (!recordRes.ok) throw new Error("Failed to update animal purchase record")
+      }
       await get().fetchAnimals()
+      await get().fetchRecords()
     } catch (e: any) {
       set({ error: e.message, loading: false })
     }
@@ -249,10 +282,9 @@ export const useMainData = create<MainDataState>((set, get) => ({
       set({ error: e.message, loading: false })
     }
   },
-  // Repeat for records and categories as needed
 }))
 
 export function MainDataProvider({ children }: { children: ReactNode }) {
   // Zustand is global, so just render children
   return children
-} 
+}
