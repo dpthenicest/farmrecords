@@ -1,4 +1,4 @@
-import { CategoryType, AnimalType } from '@prisma/client'
+import type { CategoryType as PrismaCategoryType, AnimalType as PrismaAnimalType } from '@prisma/client';
 
 export interface User {
   id: string

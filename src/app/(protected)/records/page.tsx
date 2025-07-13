@@ -154,26 +154,40 @@ export default function RecordsPage() {
                 </tr>
               </thead>
               <tbody>
-                {records.map((record: any) => (
-                  <tr key={record.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{record.date}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 bg-${record.category?.color}-100 text-${record.category?.color}-800 rounded-full text-xs`}>
-                        {record.category?.categoryType?.name || 'Unknown'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">{record.category?.name || 'Unknown'}</td>
-                    <td className="py-3 px-4">{record.animal?.name || 'N/A'}</td>
-                    <td className={`py-3 px-4 font-medium text-${record.category?.color}-600`}>₦{(record.unitPrice * record.quantity).toFixed(2)}</td>
-                    <td className="py-3 px-4">
-                      <ActionMenu
-                        onView={() => handleViewRecord(record)}
-                        onEdit={() => handleEditRecord(record)}
-                        onDelete={() => handleDeleteClick(record)}
-                      />
+                {loading || isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      Loading records...
                     </td>
                   </tr>
-                ))}
+                ) : records.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500 text-lg font-medium">
+                      No records available.
+                    </td>
+                  </tr>
+                ) : (
+                  records.map((record: any) => (
+                    <tr key={record.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">{record.date}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 bg-${record.category?.color}-100 text-${record.category?.color}-800 rounded-full text-xs`}>
+                          {record.category?.categoryType?.name || 'Unknown'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">{record.category?.name || 'Unknown'}</td>
+                      <td className="py-3 px-4">{record.animal?.name || 'N/A'}</td>
+                      <td className={`py-3 px-4 font-medium text-${record.category?.color}-600`}>₦{(record.unitPrice * record.quantity).toFixed(2)}</td>
+                      <td className="py-3 px-4">
+                        <ActionMenu
+                          onView={() => handleViewRecord(record)}
+                          onEdit={() => handleEditRecord(record)}
+                          onDelete={() => handleDeleteClick(record)}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

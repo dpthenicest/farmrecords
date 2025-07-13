@@ -21,7 +21,9 @@ interface AnimalPurchaseData {
 }
 
 export async function createRecord(data: CreateRecordData) {
-  return prisma.record.create({ data });
+  // Only include animalId if present
+  const { animalId, ...rest } = data;
+  return prisma.record.create({ data: animalId ? { ...rest, animalId } : rest });
 }
 
 export async function createAnimalPurchaseRecord(animalData: AnimalPurchaseData, userId: string) {

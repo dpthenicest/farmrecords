@@ -15,8 +15,8 @@ interface ViewAnimalModalProps {
 export function ViewAnimalModal({ isOpen, onClose, animal, onEdit }: ViewAnimalModalProps) {
   if (!animal) return null
 
-  const getAnimalIcon = (type: AnimalType) => {
-    switch (type) {
+  const getAnimalIcon = (type: AnimalType | string) => {
+    switch (type as string) {
       case 'GOAT':
         return '🐐'
       case 'FOWL':
@@ -28,8 +28,8 @@ export function ViewAnimalModal({ isOpen, onClose, animal, onEdit }: ViewAnimalM
     }
   }
 
-  const getAnimalTypeLabel = (type: AnimalType) => {
-    switch (type) {
+  const getAnimalTypeLabel = (type: AnimalType | string) => {
+    switch (type as string) {
       case 'GOAT':
         return 'Goat'
       case 'FOWL':

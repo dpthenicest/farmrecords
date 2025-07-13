@@ -1,6 +1,16 @@
 import React, { useState } from 'react'
 
-export default function FilterModal({ isOpen, onClose, onApply, filters, animalTypes = [], animalBatches = [], categories = [] }) {
+interface FilterModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApply: (filters: any) => void;
+  filters: any;
+  animalTypes?: any[];
+  animalBatches?: { id: string; name: string }[];
+  categories?: { id: string; name: string }[];
+}
+
+export default function FilterModal({ isOpen, onClose, onApply, filters, animalTypes = [], animalBatches = [], categories = [] }: FilterModalProps) {
   const [localFilters, setLocalFilters] = useState(filters || {
     dateFrom: '',
     dateTo: '',
@@ -11,7 +21,7 @@ export default function FilterModal({ isOpen, onClose, onApply, filters, animalT
     category: '',
   })
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setLocalFilters({ ...localFilters, [e.target.name]: e.target.value })
   }
 
@@ -56,14 +66,14 @@ export default function FilterModal({ isOpen, onClose, onApply, filters, animalT
             <label className="block text-sm font-medium text-gray-700 mb-1">Animal Batch</label>
             <select name="animalBatch" value={localFilters.animalBatch} onChange={handleChange} className="w-full border rounded px-3 py-2">
               <option value="">All</option>
-              {animalBatches.map(batch => <option key={batch.id} value={batch.id}>{batch.name}</option>)}
+              {animalBatches?.map(batch => <option key={batch.id} value={batch.id}>{batch.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select name="category" value={localFilters.category} onChange={handleChange} className="w-full border rounded px-3 py-2">
               <option value="">All</option>
-              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
           </div>
         </div>

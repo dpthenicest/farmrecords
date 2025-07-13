@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 
-export async function createCategory(data) {
+export async function createCategory(data: any) {
   return prisma.category.create({ 
     data,
     include: {
@@ -9,7 +9,7 @@ export async function createCategory(data) {
   });
 }
 
-export async function getCategories(where = {}) {
+export async function getCategories(where: any = {}) {
   return prisma.category.findMany({ 
     where,
     include: {
@@ -18,7 +18,7 @@ export async function getCategories(where = {}) {
   });
 }
 
-export async function getCategoryById(id) {
+export async function getCategoryById(id: string) {
   return prisma.category.findUnique({ 
     where: { id },
     include: {
@@ -27,7 +27,7 @@ export async function getCategoryById(id) {
   });
 }
 
-export async function updateCategory(id, data) {
+export async function updateCategory(id: string, data: any) {
   return prisma.category.update({ 
     where: { id }, 
     data,
@@ -37,6 +37,6 @@ export async function updateCategory(id, data) {
   });
 }
 
-export async function deleteCategory(id) {
+export async function deleteCategory(id: string) {
   return prisma.category.delete({ where: { id } });
 } 
