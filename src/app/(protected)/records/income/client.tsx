@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import IncomeTableView from './components/table-view'
+import { ViewRecordModal } from '@/components/modals/view-record-modal'
 
 export default function IncomeClient() {
   const { data: session } = useSession()
   const [incomeRecords, setIncomeRecords] = useState([])
   const [totalIncome, setTotalIncome] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [isViewRecordModalOpen, setIsViewRecordModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchIncomeRecords = async () => {
@@ -55,7 +58,22 @@ export default function IncomeClient() {
           </span>
         </div>
       </div>
-      <IncomeTableView records={incomeRecords} isLoading={isLoading} />
+      <IncomeTableView 
+        records={incomeRecords} 
+        isLoading={isLoading}
+        onViewRecord={(record: any) => {
+          setSelectedRecord(record)
+          setIsViewRecordModalOpen(true)
+        }}
+      />
+      <ViewRecordModal
+        isOpen={isViewRecordModalOpen}
+        onClose={() => {
+          setIsViewRecordModalOpen(false)
+          setSelectedRecord(null)
+        }}
+        record={selectedRecord}
+      />
     </div>
   )
 } 

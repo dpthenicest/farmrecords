@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import ExpensesTableView from './components/table-view'
+import { ViewRecordModal } from '@/components/modals/view-record-modal'
 
 export default function ExpensesClient() {
   const { data: session } = useSession()
   const [expenseRecords, setExpenseRecords] = useState([])
   const [totalExpenses, setTotalExpenses] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedRecord, setSelectedRecord] = useState<any>(null)
+  const [isViewRecordModalOpen, setIsViewRecordModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchExpenseRecords = async () => {
@@ -55,7 +58,22 @@ export default function ExpensesClient() {
           </span>
         </div>
       </div>
-      <ExpensesTableView records={expenseRecords} isLoading={isLoading} />
+      <ExpensesTableView 
+        records={expenseRecords} 
+        isLoading={isLoading}
+        onViewRecord={(record: any) => {
+          setSelectedRecord(record)
+          setIsViewRecordModalOpen(true)
+        }}
+      />
+      <ViewRecordModal
+        isOpen={isViewRecordModalOpen}
+        onClose={() => {
+          setIsViewRecordModalOpen(false)
+          setSelectedRecord(null)
+        }}
+        record={selectedRecord}
+      />
     </div>
   )
 } 

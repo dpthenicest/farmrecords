@@ -14,10 +14,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
     const data = await req.json();
+    // Convert date to Date object if present
+    if (data.date) {
+      data.date = new Date(data.date);
+    }
     const record = await updateRecord(params.id, data);
     return NextResponse.json(record);
   } catch (e) {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: `Server error ${e}` }, { status: 500 });
   }
 }
 

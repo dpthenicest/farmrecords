@@ -1,33 +1,58 @@
 import React from 'react'
 
-export default function ProfitLossTableView() {
-  // TODO: Fetch and map animal batch profit/loss data
+interface ProfitLossTableViewProps {
+  batches?: any[]
+  isLoading?: boolean
+  onViewDetails?: (animal: any) => void
+}
+
+export default function ProfitLossTableView({ batches = [], isLoading = false, onViewDetails }: ProfitLossTableViewProps) {
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full bg-white rounded-lg shadow border border-gray-100">
+      <table className="w-full">
         <thead>
-          <tr className="bg-gray-50">
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Frame</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Income</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <tr className="border-b">
+            <th className="text-left py-3 px-4 font-medium">Batch</th>
+            <th className="text-left py-3 px-4 font-medium">Time Frame</th>
+            <th className="text-left py-3 px-4 font-medium">Income</th>
+            <th className="text-left py-3 px-4 font-medium">Expenses</th>
+            <th className="text-left py-3 px-4 font-medium">Net Profit</th>
+            <th className="text-left py-3 px-4 font-medium">Status</th>
+            <th className="text-left py-3 px-4 font-medium">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {/* Example row */}
-          <tr className="border-b hover:bg-gray-50">
-            <td className="px-6 py-4 whitespace-nowrap font-semibold">Goat Batch A</td>
-            <td className="px-6 py-4 whitespace-nowrap">Jan 2024 - Mar 2024</td>
-            <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">₦2,500</td>
-            <td className="px-6 py-4 whitespace-nowrap text-red-600 font-bold">₦1,200</td>
-            <td className="px-6 py-4 whitespace-nowrap text-green-700 font-bold">₦1,300</td>
-            <td className="px-6 py-4 whitespace-nowrap">
-              <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Profit</span>
-            </td>
-          </tr>
-          {/* More rows... */}
+          {batches.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="text-center py-8 text-gray-500">
+                No batches found
+              </td>
+            </tr>
+          ) : (
+            batches.map((batch) => (
+              <tr key={batch.id} className="border-b hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap font-semibold">{batch.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{batch.timeFrame}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-green-600 font-bold">₦{batch.income.toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-red-600 font-bold">₦{batch.expenses.toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-green-700 font-bold">₦{batch.net.toLocaleString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Profit</span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    className="text-blue-600 hover:underline"
+                    onClick={() => onViewDetails && onViewDetails(batch.animal ? batch.animal : batch)}
+                  >
+                    View Details
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

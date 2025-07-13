@@ -155,9 +155,7 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
               {categories.length === 0 && (
                 <>
                   <optgroup label="Income Categories">
-                    <option value="sale-goats">Sale of Goats</option>
-                    <option value="sale-fowls">Sale of Fowls</option>
-                    <option value="sale-catfish">Sale of Catfish</option>
+                    <option value="sale-goats">Sale of Animals</option>
                     <option value="manure-sales">Manure Sales</option>
                     <option value="subsidies">Subsidies/Support</option>
                     <option value="other-income">Other Income</option>
@@ -171,6 +169,7 @@ export function AddRecordModal({ isOpen, onClose, onSubmit, isLoading = false }:
                     <option value="transportation">Transportation</option>
                     <option value="utilities">Utilities</option>
                     <option value="maintenance">Maintenance</option>
+                    <option value="maintenance">Animal Loss</option>
                     <option value="miscellaneous">Miscellaneous</option>
                   </optgroup>
                 </>

@@ -148,47 +148,53 @@ export default function AnimalTypeClient({ params }: AnimalTypeClientProps) {
       </Card>
 
       {/* Animals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAnimals.map((animal) => (
-          <Card key={animal.id}>
-            <CardHeader>
-              <CardTitle>{animal.name}</CardTitle>
-              <CardDescription>{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">{animal.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Added: {new Date(animal.createdAt).toLocaleDateString()}</span>
-                  <div className="flex space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewAnimal(animal)}
-                    >
-                      View Details
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEditAnimal(animal)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDeleteClick(animal)}
-                    >
-                      Delete
-                    </Button>
+      {filteredAnimals.length === 0 ? (
+        <div className="text-center text-gray-500 py-12 text-lg font-medium">
+          No animals available for this type.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredAnimals.map((animal) => (
+            <Card key={animal.id}>
+              <CardHeader>
+                <CardTitle>{animal.name}</CardTitle>
+                <CardDescription>{animalType.type.charAt(0).toUpperCase() + animalType.type.slice(1).toLowerCase()}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">{animal.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Added: {new Date(animal.createdAt).toLocaleDateString()}</span>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewAnimal(animal)}
+                      >
+                        View Details
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditAnimal(animal)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteClick(animal)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Modals */}
       <AddAnimalModal

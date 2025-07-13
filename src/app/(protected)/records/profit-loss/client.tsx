@@ -1,11 +1,33 @@
 "use client"
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import ProfitLossGridView from './components/grid-view'
 import ProfitLossTableView from './components/table-view'
+import { ViewAnimalRecordsModal } from '@/components/modals/view-animal-records-modal'
+import { useMainData } from '@/providers/main-data-provider'
 
 export default function ProfitLossClient() {
   const [view, setView] = useState<'grid' | 'table'>('grid')
+  const [selectedAnimal, setSelectedAnimal] = useState<any>(null)
+  const [isViewAnimalRecordsModalOpen, setIsViewAnimalRecordsModalOpen] = useState(false)
+  const { animals, records } = useMainData()
+
+  // Aggregate profit/loss by animal batch
+  const batches = animals.map(animal => {
+    const animalRecords = records.filter(r => r.animalId === animal.id)
+    const income = animalRecords.filter(r => r.category?.categoryType?.name === 'INCOME').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const expenses = animalRecords.filter(r => r.category?.categoryType?.name === 'EXPENSE').reduce((sum, r) => sum + parseFloat(r.unitPrice) * r.quantity, 0)
+    const net = income - expenses
+    return {
+      ...animal,
+      income,
+      expenses,
+      net,
+      status: net >= 0 ? 'Profit' : 'Loss',
+    }
+  })
+
+  const isLoading = false // You can update this if you have loading logic
 
   return (
     <div>
@@ -27,7 +49,33 @@ export default function ProfitLossClient() {
           </button>
         </div>
       </div>
-      {view === 'grid' ? <ProfitLossGridView /> : <ProfitLossTableView />}
+      {view === 'grid' ? (
+        <ProfitLossGridView 
+          batches={batches} 
+          isLoading={isLoading}
+          onViewDetails={(animal: any) => {
+            setSelectedAnimal(animal)
+            setIsViewAnimalRecordsModalOpen(true)
+          }}
+        />
+      ) : (
+        <ProfitLossTableView 
+          batches={batches} 
+          isLoading={isLoading}
+          onViewDetails={(animal: any) => {
+            setSelectedAnimal(animal)
+            setIsViewAnimalRecordsModalOpen(true)
+          }}
+        />
+      )}
+      <ViewAnimalRecordsModal
+        isOpen={isViewAnimalRecordsModalOpen}
+        onClose={() => {
+          setIsViewAnimalRecordsModalOpen(false)
+          setSelectedAnimal(null)
+        }}
+        animal={selectedAnimal}
+      />
     </div>
   )
 } 

@@ -184,7 +184,6 @@ export const useMainData = create<MainDataState>((set, get) => ({
             quantity: (animal as any).quantity,
             note: (animal as any).note,
             date: (animal as any).purchaseDate,
-            totalPrice: (animal as any).totalPrice,
             animalId: id
           }),
         })

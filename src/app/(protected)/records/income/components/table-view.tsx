@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 interface IncomeTableViewProps {
   records?: any[]
   isLoading?: boolean
+  onViewRecord?: (record: any) => void
 }
 
-export default function IncomeTableView({ records = [], isLoading = false }: IncomeTableViewProps) {
+export default function IncomeTableView({ records = [], isLoading = false, onViewRecord }: IncomeTableViewProps) {
   if (isLoading) {
     return (
       <Card>
@@ -70,8 +71,8 @@ export default function IncomeTableView({ records = [], isLoading = false }: Inc
                       {record.note || '-'}
                     </td>
                     <td className="py-3 px-4">
-                      <Button variant="outline" size="sm">View</Button>
-                      <Button variant="outline" size="sm" className="ml-2">Edit</Button>
+                      <Button variant="outline" size="sm" onClick={() => onViewRecord && onViewRecord(record)}>View</Button>
+                      {/* <Button variant="outline" size="sm" className="ml-2">Edit</Button> */}
                     </td>
                   </tr>
                 ))

@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button'
 interface ExpensesTableViewProps {
   records?: any[]
   isLoading?: boolean
+  onViewRecord?: (record: any) => void
 }
 
-export default function ExpensesTableView({ records = [], isLoading = false }: ExpensesTableViewProps) {
+export default function ExpensesTableView({ records = [], isLoading = false, onViewRecord }: ExpensesTableViewProps) {
   if (isLoading) {
     return (
       <Card>
@@ -70,8 +71,8 @@ export default function ExpensesTableView({ records = [], isLoading = false }: E
                       {record.note || '-'}
                     </td>
                     <td className="py-3 px-4">
-                      <Button variant="outline" size="sm">View</Button>
-                      <Button variant="outline" size="sm" className="ml-2">Edit</Button>
+                      <Button variant="outline" size="sm" onClick={() => onViewRecord && onViewRecord(record)}>View</Button>
+                      {/* <Button variant="outline" size="sm" className="ml-2">Edit</Button> */}
                     </td>
                   </tr>
                 ))

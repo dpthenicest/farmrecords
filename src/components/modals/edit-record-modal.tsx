@@ -74,7 +74,6 @@ export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading =
       ...formData,
       unitPrice: parseFloat(finalUnitPrice || '0'),
       quantity: parseInt(formData.quantity),
-      totalPrice: parseFloat(finalTotalPrice || '0'),
       date: new Date(formData.date),
       // userId: session?.user?.id // Uncomment if you have session
     })
@@ -136,9 +135,7 @@ export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading =
               {categories.length === 0 && (
                 <>
                   <optgroup label="Income Categories">
-                    <option value="sale-goats">Sale of Goats</option>
-                    <option value="sale-fowls">Sale of Fowls</option>
-                    <option value="sale-catfish">Sale of Catfish</option>
+                    <option value="sale-goats">Sale of Animals</option>
                     <option value="manure-sales">Manure Sales</option>
                     <option value="subsidies">Subsidies/Support</option>
                     <option value="other-income">Other Income</option>
@@ -152,6 +149,7 @@ export function EditRecordModal({ isOpen, onClose, record, onSubmit, isLoading =
                     <option value="transportation">Transportation</option>
                     <option value="utilities">Utilities</option>
                     <option value="maintenance">Maintenance</option>
+                    <option value="maintenance">Animal Loss</option>
                     <option value="miscellaneous">Miscellaneous</option>
                   </optgroup>
                 </>
