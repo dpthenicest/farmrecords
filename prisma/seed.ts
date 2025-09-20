@@ -1,112 +1,168 @@
-import { PrismaClient } from '@prisma/client'
+// prisma/seed.ts
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  // Create a default user for seeding
-  const user = await prisma.user.upsert({
-    where: { email: 'admin@farm.com' },
-    update: {},
-    create: {
-      email: 'admin@farm.com',
-      name: 'Farm Admin',
-      password: 'hashedpassword123', // In real app, hash this
+  console.log("🌱 Seeding database...");
+
+  // 1. Users
+  const owner = await prisma.user.create({
+    data: {
+      username: "farm_owner",
+      email: "owner@example.com",
+      passwordHash: "hashedpassword123",
+      firstName: "John",
+      lastName: "Doe",
+      role: "OWNER",
     },
-  })
+  });
 
-  // Create category types first
-  const incomeCategoryType = await prisma.categoryType.upsert({
-    where: { name: 'INCOME' },
-    update: {},
-    create: { name: 'INCOME', description: 'Income categories' },
-  })
+  const manager = await prisma.user.create({
+    data: {
+      username: "farm_manager",
+      email: "manager@example.com",
+      passwordHash: "hashedpassword456",  
+      firstName: "Jane",
+      lastName: "Smith",
+      role: "MANAGER",
+    },
+  });
 
-  const expenseCategoryType = await prisma.categoryType.upsert({
-    where: { name: 'EXPENSE' },
-    update: {},
-    create: { name: 'EXPENSE', description: 'Expense categories' },
-  })
+  // 2. Sales & Expense Categories
+  const feedCategory = await prisma.salesExpenseCategory.create({
+    data: {
+      userId: owner.id,
+      categoryName: "Feed",
+      categoryType: "EXPENSE",
+      description: "Animal feed costs",
+    },
+  });
 
-  // Create animal types with emoji
-  const animalTypes = [
-    { type: 'GOAT', emoji: '🐐' },
-    { type: 'FOWL', emoji: '🐔' },
-    { type: 'CATFISH', emoji: '🐟' },
-    { type: 'COW', emoji: '🐄' },
-    { type: 'PIG', emoji: '🐖' },
-    { type: 'SHEEP', emoji: '🐑' },
-    { type: 'HORSE', emoji: '🐎' },
-    { type: 'RABBIT', emoji: '🐇' },
-    { type: 'DUCK', emoji: '🦆' },
-    { type: 'TURKEY', emoji: '🦃' },
-  ]
-  
-  for (const animalType of animalTypes) {
-    await prisma.animalType.upsert({
-      where: { type: animalType.type },
-      update: { emoji: animalType.emoji },
-      create: animalType,
-    })
-  }
+  const salesCategory = await prisma.salesExpenseCategory.create({
+    data: {
+      userId: owner.id,
+      categoryName: "Product Sales",
+      categoryType: "SALES",
+      description: "Income from selling eggs, milk, etc.",
+    },
+  });
 
-  // Create expense categories
-  const expenseCategories = [
-    { name: 'Animal Purchase', description: 'Buying new goats, fowls, catfish', color: 'red' },
-    { name: 'Feed', description: 'Maize, pellets, or other feed', color: 'red' },
-    { name: 'Drugs & Vaccines', description: 'Veterinary treatments', color: 'red' },
-    { name: 'Workers\' Salary', description: 'Monthly payments to farm workers', color: 'red' },
-    { name: 'Facility Costs', description: 'Repairs, water supply, tools', color: 'red' },
-    { name: 'Transportation', description: 'Fuel, logistics', color: 'red' },
-    { name: 'Utilities', description: 'Electricity, water bills', color: 'red' },
-    { name: 'Maintenance', description: 'Cage/tank repair, fencing, etc.', color: 'red' },
-    { name: 'Animal Loss', description: 'Death/Loss of Animals.', color: 'red' },
-    { name: 'Miscellaneous', description: 'Anything not covered in above', color: 'red' }
-  ]
+  // 3. Customers
+  const customer = await prisma.customer.create({
+    data: {
+      userId: owner.id,
+      customerName: "Local Restaurant",
+      customerCode: "CUST001",
+      businessName: "Farm to Table Eatery",
+      email: "contact@restaurant.com",
+      phone: "08012345678",
+      customerType: "RESTAURANT",
+    },
+  });
 
-  // Create income categories
-  const incomeCategories = [
-    { name: 'Sale of Animals', description: 'Revenue from animal sales', color: 'green' },
-    { name: 'Manure Sales', description: 'Selling animal waste as fertilizer', color: 'green' },
-    { name: 'Subsidies/Support', description: 'Gov\'t support, aid (if any)', color: 'green' },
-    { name: 'Other Income', description: 'Rentals, byproducts, etc.', color: 'green' }
-  ]
+  // 4. Suppliers
+  const supplier = await prisma.supplier.create({
+    data: {
+      userId: owner.id,
+      supplierName: "Agro Supplies Ltd",
+      supplierCode: "SUP001",
+      supplierType: "FEED",
+      email: "sales@agrosupplies.com",
+      phone: "08098765432",
+    },
+  });
 
-  // Create expense categories
-  for (const category of expenseCategories) {
-    await prisma.category.upsert({
-      where: { unique_category_for_user: { name: category.name, userId: user.id } },
-      update: {},
-      create: {
-        name: category.name,
-        categoryTypeId: expenseCategoryType.id,
-        description: category.description,
-        userId: user.id,
-      },
-    })
-  }
+  // 5. Inventory
+  const maize = await prisma.inventory.create({
+    data: {
+      userId: owner.id,
+      categoryId: feedCategory.id,
+      itemName: "Maize",
+      itemCode: "INV001",
+      unitOfMeasure: "kg",
+      currentQuantity: 500,
+      reorderLevel: 100,
+      unitCost: 50,
+      sellingPrice: 70,
+      location: "Storehouse A",
+    },
+  });
 
-  // Create income categories
-  for (const category of incomeCategories) {
-    await prisma.category.upsert({
-      where: { unique_category_for_user: { name: category.name, userId: user.id } },
-      update: {},
-      create: {
-        name: category.name,
-        categoryTypeId: incomeCategoryType.id,
-        description: category.description,
-        userId: user.id,
-      },
-    })
-  }
+  // 6. Asset
+  const tractor = await prisma.asset.create({
+    data: {
+      userId: owner.id,
+      categoryId: null,
+      assetName: "Tractor",
+      assetCode: "AST001",
+      assetType: "EQUIPMENT",
+      purchaseCost: 1000000,
+      purchaseDate: new Date("2023-01-15"),
+      salvageValue: 200000,
+      usefulLifeYears: 10,
+      depreciationRate: 10,
+      conditionStatus: "GOOD",
+      location: "Garage",
+    },
+  });
 
-  console.log('Database seeded successfully!')
+  // 7. Animal Batch
+  const layerBatch = await prisma.animalBatch.create({
+    data: {
+      userId: owner.id,
+      categoryId: feedCategory.id,
+      batchCode: "BATCH001",
+      species: "Chicken",
+      breed: "Layers",
+      initialQuantity: 200,
+      currentQuantity: 195,
+      batchStartDate: new Date("2023-02-01"),
+      totalCost: 150000,
+      batchStatus: "ACTIVE",
+      location: "Poultry House 1",
+    },
+  });
+
+  // 8. Animals
+  await prisma.animal.create({
+    data: {
+      userId: owner.id,
+      batchId: layerBatch.id,
+      animalTag: "CH001",
+      species: "Chicken",
+      breed: "Layer",
+      gender: "Female",
+      birthDate: new Date("2023-01-01"),
+      purchaseWeight: 0.5,
+      currentWeight: 1.2,
+      purchaseCost: 750,
+      healthStatus: "Healthy",
+    },
+  });
+
+  // 9. Task
+  await prisma.task.create({
+    data: {
+      userId: owner.id,
+      assignedTo: manager.id,
+      taskTitle: "Feed Layer Batch",
+      description: "Provide morning feed to Layer Batch BATCH001",
+      priority: "HIGH",
+      status: "PENDING",
+      dueDate: new Date(),
+      animalBatchId: layerBatch.id,
+    },
+  });
+
+  console.log("✅ Seeding completed.");
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error("❌ Error seeding database:", e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  }) 
+    await prisma.$disconnect();
+  });

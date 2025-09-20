@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Users, DollarSign } from "lucide-react"
-import { AddAnimalModal } from '@/components/modals/add-animal-modal'
-import { AddRecordModal } from '@/components/modals/add-record-modal'
-import { useMainData } from '@/providers/main-data-provider'
 
 export default function DashboardClient() {
   const [stats, setStats] = useState<any>(null)
@@ -13,40 +10,6 @@ export default function DashboardClient() {
   const [isAddAnimalModalOpen, setIsAddAnimalModalOpen] = useState(false)
   const [isAddRecordModalOpen, setIsAddRecordModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
-  const { addAnimal, addRecord, fetchAnimals, fetchRecords } = useMainData()
-
-  useEffect(() => {
-    async function fetchStats() {
-      setLoading(true)
-      const res = await fetch('/api/stats')
-      const data = await res.json()
-      setStats(data)
-      setLoading(false)
-    }
-    fetchStats()
-  }, [])
-
-  const handleAddAnimal = async (data: any) => {
-    setModalLoading(true)
-    try {
-      await addAnimal(data)
-      setIsAddAnimalModalOpen(false)
-      fetchAnimals()
-    } finally {
-      setModalLoading(false)
-    }
-  }
-
-  const handleAddRecord = async (data: any) => {
-    setModalLoading(true)
-    try {
-      await addRecord(data)
-      setIsAddRecordModalOpen(false)
-      fetchRecords()
-    } finally {
-      setModalLoading(false)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -121,9 +84,9 @@ export default function DashboardClient() {
             <div className="space-y-4">
               {loading ? (
                 <div className="text-gray-500">Loading...</div>
-              ) : stats?.recentRecords?.length === 0 ? (
+              ) : Array.isArray(stats?.recentRecords) && stats.recentRecords.length === 0 ? (
                 <div className="text-gray-500">No recent records found.</div>
-              ) : (
+              ) : Array.isArray(stats?.recentRecords) ? (
                 stats.recentRecords.map((record: any) => (
                   <div key={record.id} className="flex items-center justify-between">
                     <div>
@@ -131,21 +94,29 @@ export default function DashboardClient() {
                       <p className="text-sm text-gray-600">{record.note || ''}</p>
                     </div>
                     <div className="text-right">
-                      <p className={
-                        'font-medium ' +
-                        (record.category?.categoryType?.name === 'INCOME'
-                          ? 'text-green-600'
-                          : 'text-red-600')
-                      }>
-                        {record.category?.categoryType?.name === 'INCOME' ? '+' : '-'}₦{(record.unitPrice * record.quantity).toLocaleString()}
+                      <p
+                        className={
+                          'font-medium ' +
+                          (record.category?.categoryType?.name === 'INCOME'
+                            ? 'text-green-600'
+                            : 'text-red-600')
+                        }
+                      >
+                        {record.category?.categoryType?.name === 'INCOME' ? '+' : '-'}₦
+                        {(record.unitPrice * record.quantity).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-600">{new Date(record.date).toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(record.date).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 ))
+              ) : (
+                <div className="text-gray-500">No recent records found.</div>
               )}
             </div>
           </CardContent>
+
         </Card>
 
         <Card>
@@ -181,20 +152,6 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Modals */}
-      <AddAnimalModal
-        isOpen={isAddAnimalModalOpen}
-        onClose={() => setIsAddAnimalModalOpen(false)}
-        onSubmit={handleAddAnimal}
-        isLoading={modalLoading}
-      />
-      <AddRecordModal
-        isOpen={isAddRecordModalOpen}
-        onClose={() => setIsAddRecordModalOpen(false)}
-        onSubmit={handleAddRecord}
-        isLoading={modalLoading}
-      />
     </div>
   )
 } 

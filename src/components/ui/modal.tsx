@@ -1,94 +1,51 @@
-'use client'
+"use client"
 
-import { ReactNode, useEffect } from 'react'
-import { X } from 'lucide-react'
-import { Button } from './button'
-import { cn } from '@/lib/utils'
-
-interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  title: string
-  children: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-  showCloseButton?: boolean
-  className?: string
-}
+import * as React from "react"
+import * as Dialog from "@radix-ui/react-dialog"
+import { X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function Modal({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   title,
+  description,
   children,
-  size = 'md',
-  showCloseButton = true,
-  className
-}: ModalProps) {
-  // Close modal on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
-
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl'
-  }
-
+  footer,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title?: string
+  description?: string
+  children: React.ReactNode
+  footer?: React.ReactNode
+}) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div 
-        className={cn(
-          "relative w-full mx-4 bg-white/90 backdrop-blur-md rounded-lg shadow-2xl border border-white/20",
-          "animate-in zoom-in-95 fade-in-0 slide-in-from-bottom-4 duration-200",
-          sizeClasses[size],
-          className
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          {showCloseButton && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8 rounded-full hover:bg-gray-100"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content
+          className={cn(
+            "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-lg"
           )}
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {children}
-        </div>
-      </div>
-    </div>
+        >
+          <div className="flex items-center justify-between">
+            {title && (
+              <Dialog.Title className="text-lg font-semibold">{title}</Dialog.Title>
+            )}
+            <Dialog.Close className="rounded p-1 hover:bg-gray-100">
+              <X className="h-5 w-5" />
+            </Dialog.Close>
+          </div>
+          {description && (
+            <Dialog.Description className="mt-1 text-sm text-gray-600">
+              {description}
+            </Dialog.Description>
+          )}
+          <div className="mt-4">{children}</div>
+          {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
-} 
+}

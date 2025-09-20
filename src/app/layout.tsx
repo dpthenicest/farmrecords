@@ -1,8 +1,7 @@
 import "./globals.css"
 import { ReactNode, Suspense } from "react"
 import Loading from "./loading"
-import SessionProviderWrapper from "@/components/session-provider-wrapper"
-import { MainDataProvider } from "@/providers/main-data-provider"
+import SessionProviderWrapper from "@/providers/session-provider-wrapper"
 
 export const metadata = {
   title: "Farm Records",
@@ -14,11 +13,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <SessionProviderWrapper>
-          <MainDataProvider>
             <Suspense fallback={<Loading />}>
               {children}
             </Suspense>
-          </MainDataProvider>
         </SessionProviderWrapper>
       </body>
     </html>

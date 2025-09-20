@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.lyd/prisma-schema
+// Prisma schema file for comprehensive farm management system
+// Based on ERD requirements for mixed farming operations
 
 generator client {
   provider = "prisma-client-js"
@@ -10,106 +10,496 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model: Represents a user of the farm records application.
-// Each user can have their own categories, animals, and records.
+// User Management
 model User {
-  id         String     @id @default(cuid())
-  email      String     @unique // Unique email for user login
-  name       String?    // Optional user name
-  password   String     // Hashed password for security
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  records    Record[]   // Relation to records owned by this user
-  categories Category[] // Relation to categories created by this user
-  animals    Animal[]   // Relation to animals owned by this user
+  id           Int      @id @default(autoincrement()) @map("user_id")
+  username     String   @unique
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String?  @map("first_name")
+  lastName     String?  @map("last_name")
+  role         String   // OWNER, MANAGER, ACCOUNTANT, WORKER
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  lastLogin    DateTime? @map("last_login")
 
-  @@map("users") // Maps the model name to the database table name
+  // Relationships
+  financialRecords    FinancialRecord[]
+  invoices           Invoice[]
+  purchaseOrders     PurchaseOrder[]
+  salesExpenseCategories SalesExpenseCategory[]
+  inventory          Inventory[]
+  assets             Asset[]
+  assetMaintenance   AssetMaintenance[]
+  animals            Animal[]
+  animalBatches      AnimalBatch[]
+  animalRecords      AnimalRecord[]
+  customers          Customer[]
+  suppliers          Supplier[]
+  inventoryMovements InventoryMovement[]
+  createdTasks       Task[] @relation("TaskCreator")
+  assignedTasks      Task[] @relation("TaskAssignee")
+
+  @@map("users")
 }
 
-// CategoryType model: Represents a type of category (e.g., Income, Expense).
-// This is now a table to allow dynamic management of category types.
-model CategoryType {
-  id        String     @id @default(cuid())
-  name      String     @unique // e.g., "Income", "Expense"
-  description String?    // Optional description for the category type
-  categories Category[] // Relation to categories associated with this type
+// Financials Module
 
-  @@map("category_types")
+model FinancialRecord {
+  id                Int      @id @default(autoincrement()) @map("record_id")
+  userId            Int      @map("user_id")
+  transactionType   String   @map("transaction_type") // INCOME, EXPENSE, TRANSFER
+  amount            Decimal  @db.Decimal(12, 2)
+  categoryId        Int      @map("category_id")
+  customerId        Int?     @map("customer_id")
+  supplierId        Int?     @map("supplier_id")
+  invoiceId         Int?     @map("invoice_id")
+  purchaseOrderId   Int?     @map("purchase_order_id")
+  transactionDate   DateTime @map("transaction_date")
+  description       String
+  referenceNumber   String?  @map("reference_number")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      SalesExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  supplier      Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  invoice       Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([transactionDate])
+  @@map("financial_records")
 }
 
-// Category model: Represents a type of income or expense category defined by a user.
-// This allows users to customize their financial tracking.
-model Category {
-  id             String       @id @default(cuid())
-  name           String       // Category name (unique per user via composite constraint)
-  categoryTypeId String       // Foreign key to the new CategoryType model
-  categoryType   CategoryType @relation(fields: [categoryTypeId], references: [id], onDelete: Restrict) // Deleting a type with categories is restricted
-  description    String?      // Optional description for the category
-  color          String?      // Optional color code for UI representation
-  userId         String       // Foreign key to the User model
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their categories
-  records        Record[]     // Relation to records associated with this category
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model Invoice {
+  id            Int      @id @default(autoincrement()) @map("invoice_id")
+  userId        Int      @map("user_id")
+  customerId    Int      @map("customer_id")
+  invoiceNumber String   @map("invoice_number")
+  invoiceDate   DateTime @map("invoice_date")
+  dueDate       DateTime @map("due_date")
+  subtotal      Decimal  @db.Decimal(12, 2)
+  taxAmount     Decimal  @db.Decimal(12, 2) @map("tax_amount")
+  totalAmount   Decimal  @db.Decimal(12, 2) @map("total_amount")
+  status        String   // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  paymentMethod String?  @map("payment_method")
+  paymentDate   DateTime? @map("payment_date")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  // Ensures that a category name is unique only for a specific user,
-  // allowing different users to have categories with the same name.
-  @@unique([name, userId], name: "unique_category_for_user")
-  @@index([userId]) // Index for foreign key performance
-  @@index([categoryTypeId]) // Index for foreign key performance
-  @@map("categories")
+  // Relationships
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items            InvoiceItem[]
+  financialRecords FinancialRecord[]
+
+  @@unique([invoiceNumber, userId])
+  @@index([userId])
+  @@index([customerId])
+  @@index([status])
+  @@map("invoices")
 }
 
-// AnimalType model: Represents a type/species of animal (e.g., Goat, Fowl, Catfish)
-model AnimalType {
-  id      String   @id @default(cuid())
-  type    String   @unique // e.g., "GOAT", "FOWL", "CATFISH"
-  emoji   String   // New column for storing an emoji representing the animal type
-  animals Animal[]
+model InvoiceItem {
+  id              Int      @id @default(autoincrement()) @map("item_id")
+  invoiceId       Int      @map("invoice_id")
+  inventoryId     Int?     @map("inventory_id")
+  animalBatchId   Int?     @map("animal_batch_id")
+  itemDescription String   @map("item_description")
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitPrice       Decimal  @db.Decimal(10, 2) @map("unit_price")
+  totalPrice      Decimal  @db.Decimal(12, 2) @map("total_price")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  @@map("animal_types")
+  // Relationships
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  inventory   Inventory?   @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  animalBatch AnimalBatch? @relation(fields: [animalBatchId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([inventoryId])
+  @@index([animalBatchId])
+  @@map("invoice_items")
 }
 
-// Animal model: Represents an individual animal on the farm.
-// Each animal belongs to a user and has a specific type.
+model PurchaseOrder {
+  id                   Int      @id @default(autoincrement()) @map("po_id")
+  userId               Int      @map("user_id")
+  supplierId           Int      @map("supplier_id")
+  poNumber             String   @map("po_number")
+  orderDate            DateTime @map("order_date")
+  expectedDeliveryDate DateTime? @map("expected_delivery_date")
+  actualDeliveryDate   DateTime? @map("actual_delivery_date")
+  subtotal             Decimal  @db.Decimal(12, 2)
+  taxAmount            Decimal  @db.Decimal(12, 2) @map("tax_amount")
+  totalAmount          Decimal  @db.Decimal(12, 2) @map("total_amount")
+  status               String   // DRAFT, SENT, RECEIVED, PARTIAL, CANCELLED
+  notes                String?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items            PurchaseOrderItem[]
+  financialRecords FinancialRecord[]
+
+  @@unique([poNumber, userId])
+  @@index([userId])
+  @@index([supplierId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              Int      @id @default(autoincrement()) @map("item_id")
+  poId            Int      @map("po_id")
+  inventoryId     Int?     @map("inventory_id")
+  itemDescription String   @map("item_description")
+  quantity        Decimal  @db.Decimal(10, 2)
+  unitPrice       Decimal  @db.Decimal(10, 2) @map("unit_price")
+  totalPrice      Decimal  @db.Decimal(12, 2) @map("total_price")
+  received        Boolean  @default(false)
+  receivedDate    DateTime? @map("received_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  inventory     Inventory?    @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  @@index([poId])
+  @@index([inventoryId])
+  @@map("purchase_order_items")
+}
+
+model SalesExpenseCategory {
+  id           Int      @id @default(autoincrement()) @map("category_id")
+  userId       Int      @map("user_id")
+  categoryName String   @map("category_name")
+  categoryType String   @map("category_type") // SALES, EXPENSE
+  description  String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  financialRecords FinancialRecord[]
+  inventory        Inventory[]
+  assets           Asset[]
+  animalBatches    AnimalBatch[]
+
+  @@unique([categoryName, userId])
+  @@index([userId])
+  @@map("sales_expense_categories")
+}
+
+// Assets & Inventory Module
+
+model Inventory {
+  id              Int      @id @default(autoincrement()) @map("inventory_id")
+  userId          Int      @map("user_id")
+  categoryId      Int?     @map("category_id")
+  itemName        String   @map("item_name")
+  itemCode        String   @map("item_code")
+  description     String?
+  unitOfMeasure   String   @map("unit_of_measure")
+  currentQuantity Decimal  @db.Decimal(10, 2) @map("current_quantity")
+  reorderLevel    Decimal  @db.Decimal(10, 2) @map("reorder_level")
+  unitCost        Decimal  @db.Decimal(10, 2) @map("unit_cost")
+  sellingPrice    Decimal  @db.Decimal(10, 2) @map("selling_price")
+  location        String?
+  expiryDate      DateTime? @map("expiry_date")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category            SalesExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  invoiceItems        InvoiceItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  inventoryMovements  InventoryMovement[]
+
+  @@unique([itemCode, userId])
+  @@index([userId])
+  @@index([categoryId])
+  @@map("inventory")
+}
+
+model Asset {
+  id               Int      @id @default(autoincrement()) @map("asset_id")
+  userId           Int      @map("user_id")
+  categoryId       Int?     @map("category_id")
+  assetName        String   @map("asset_name")
+  assetCode        String   @map("asset_code")
+  description      String?
+  assetType        String   @map("asset_type") // INFRASTRUCTURE, EQUIPMENT, VEHICLES
+  purchaseCost     Decimal  @db.Decimal(12, 2) @map("purchase_cost")
+  purchaseDate     DateTime @map("purchase_date")
+  salvageValue     Decimal  @db.Decimal(12, 2) @map("salvage_value")
+  usefulLifeYears  Int      @map("useful_life_years")
+  depreciationRate Decimal  @db.Decimal(5, 2) @map("depreciation_rate")
+  conditionStatus  String   @map("condition_status")
+  location         String?
+  warrantyInfo     String?  @map("warranty_info")
+  insuranceInfo    String?  @map("insurance_info")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  maintenance AssetMaintenance[]
+  tasks       Task[]
+
+  @@unique([assetCode, userId])
+  @@index([userId])
+  @@index([categoryId])
+  @@map("assets")
+}
+
+model AssetMaintenance {
+  id              Int      @id @default(autoincrement()) @map("maintenance_id")
+  assetId         Int      @map("asset_id")
+  userId          Int      @map("user_id")
+  maintenanceType String   @map("maintenance_type") // MAINTENANCE, REPAIR, CLEANING, INSPECTION
+  scheduledDate   DateTime @map("scheduled_date")
+  completedDate   DateTime? @map("completed_date")
+  cost            Decimal  @db.Decimal(10, 2)
+  supplierId      Int?     @map("supplier_id")
+  description     String
+  notes           String?
+  status          String   // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  asset    Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([assetId])
+  @@index([userId])
+  @@index([supplierId])
+  @@index([scheduledDate])
+  @@map("asset_maintenance")
+}
+
 model Animal {
-  id           String     @id @default(cuid())
-  name         String     // Name of the animal (e.g., "Babe", "Daisy")
-  animalTypeId String     // Foreign key to the AnimalType model
-  animalType   AnimalType @relation(fields: [animalTypeId], references: [id], onDelete: Restrict)
-  description  String?    // Optional description or notes about the animal
-  userId       String     // Foreign key to the User model
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their animals
-  records      Record[]   // Relation to records associated with this animal
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id              Int      @id @default(autoincrement()) @map("animal_id")
+  userId          Int      @map("user_id")
+  batchId         Int?     @map("batch_id")
+  animalTag       String   @map("animal_tag")
+  species         String
+  breed           String?
+  gender          String?
+  birthDate       DateTime? @map("birth_date")
+  purchaseWeight  Decimal? @db.Decimal(10, 2) @map("purchase_weight")
+  currentWeight   Decimal? @db.Decimal(10, 2) @map("current_weight")
+  purchaseCost    Decimal? @db.Decimal(10, 2) @map("purchase_cost")
+  healthStatus    String?  @map("health_status")
+  lastHealthCheck DateTime? @map("last_health_check")
+  notes           String?
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@index([userId]) // Index for foreign key performance
-  @@index([animalTypeId]) // Index for animal type
+  // Relationships
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batch         AnimalBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  animalRecords AnimalRecord[]
+
+  @@unique([animalTag, userId])
+  @@index([userId])
+  @@index([batchId])
   @@map("animals")
 }
 
-// Record model: Represents a single financial or operational record (income/expense).
-// This model is normalized by removing the 'total' field.
-model Record {
-  id          String     @id @default(cuid())
-  // Removed 'type' field as it can be derived from the associated Category's type
-  categoryId  String     // Foreign key to the Category model
-  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade) // Deleting a category deletes its records
-  unitPrice   Decimal    @db.Decimal(10, 2) // Price per unit, using Decimal for financial precision
-  quantity    Int        @default(1) // Number of units, defaults to 1
-  note        String?    // Optional detailed notes about the record
-  date        DateTime   @default(now()) // The specific date of the income/expense event
-  animalId    String     // Required foreign key to the Animal model (for animal-specific records)
-  animal      Animal     @relation(fields: [animalId], references: [id], onDelete: Cascade) // If an animal is deleted, delete its records
-  userId      String     // Foreign key to the User model (who created this record)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade) // Deleting a user deletes their records
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+model AnimalBatch {
+  id              Int      @id @default(autoincrement()) @map("batch_id")
+  userId          Int      @map("user_id")
+  categoryId      Int?     @map("category_id")
+  batchCode       String   @map("batch_code")
+  species         String
+  breed           String?
+  initialQuantity Int      @map("initial_quantity")
+  currentQuantity Int      @map("current_quantity")
+  batchStartDate  DateTime @map("batch_start_date")
+  totalCost       Decimal  @db.Decimal(12, 2) @map("total_cost")
+  averageWeight   Decimal? @db.Decimal(10, 2) @map("average_weight")
+  batchStatus     String   @map("batch_status") // ACTIVE, GROWING, PRODUCING, MATURE, SOLD, COMPLETED
+  location        String?
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@index([categoryId]) // Index for foreign key performance
-  @@index([userId]) // Index for foreign key performance
-  @@index([animalId]) // Index for optional foreign key performance
-  @@index([date]) // Index for date-based queries
-  @@map("records")
+  // Relationships
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  animals       Animal[]
+  animalRecords AnimalRecord[]
+  invoiceItems  InvoiceItem[]
+  tasks         Task[]
+
+  @@unique([batchCode, userId])
+  @@index([userId])
+  @@index([categoryId])
+  @@map("animal_batches")
+}
+
+model AnimalRecord {
+  id               Int      @id @default(autoincrement()) @map("record_id")
+  userId           Int      @map("user_id")
+  animalId         Int?     @map("animal_id")
+  batchId          Int?     @map("batch_id")
+  recordType       String   @map("record_type") // FEEDING, WEIGHING, HEALTH_CHECK, VACCINATION, PRODUCTION, MORTALITY, BREEDING, GENERAL
+  recordDate       DateTime @map("record_date")
+  weight           Decimal? @db.Decimal(10, 2)
+  feedConsumption  Decimal? @db.Decimal(10, 2) @map("feed_consumption")
+  medicationCost   Decimal? @db.Decimal(10, 2) @map("medication_cost")
+  healthStatus     String?  @map("health_status")
+  observations     String?
+  temperature      Decimal? @db.Decimal(5, 2)
+  mortalityCount   Int      @default(0) @map("mortality_count")
+  productionOutput Decimal? @db.Decimal(10, 2) @map("production_output")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  animal Animal?      @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  batch  AnimalBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([animalId])
+  @@index([batchId])
+  @@index([recordDate])
+  @@map("animal_records")
+}
+
+// Contacts Module
+
+model Customer {
+  id                      Int      @id @default(autoincrement()) @map("customer_id")
+  userId                  Int      @map("user_id")
+  customerName            String   @map("customer_name")
+  customerCode            String   @map("customer_code")
+  businessName            String?  @map("business_name")
+  contactPerson           String?  @map("contact_person")
+  email                   String?
+  phone                   String?
+  address                 String?
+  customerType            String   @map("customer_type") // INDIVIDUAL, RESTAURANT, MARKET, PROCESSOR
+  creditLimit             Decimal? @db.Decimal(12, 2) @map("credit_limit")
+  paymentTermsDays        Int?     @map("payment_terms_days")
+  paymentMethodPreference String?  @map("payment_method_preference")
+  isActive                Boolean  @default(true) @map("is_active")
+  notes                   String?
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices         Invoice[]
+  financialRecords FinancialRecord[]
+
+  @@unique([customerCode, userId])
+  @@index([userId])
+  @@map("customers")
+}
+
+model Supplier {
+  id               Int      @id @default(autoincrement()) @map("supplier_id")
+  userId           Int      @map("user_id")
+  supplierName     String   @map("supplier_name")
+  supplierCode     String   @map("supplier_code")
+  businessName     String?  @map("business_name")
+  contactPerson    String?  @map("contact_person")
+  email            String?
+  phone            String?
+  address          String?
+  supplierType     String   @map("supplier_type") // FEED, VETERINARY, EQUIPMENT, SERVICES, FINGERLINGS, GENERAL
+  paymentTermsDays Int?     @map("payment_terms_days")
+  taxId            String?  @map("tax_id")
+  rating           Decimal? @db.Decimal(2, 1)
+  isActive         Boolean  @default(true) @map("is_active")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchaseOrders   PurchaseOrder[]
+  financialRecords FinancialRecord[]
+  assetMaintenance AssetMaintenance[]
+
+  @@unique([supplierCode, userId])
+  @@index([userId])
+  @@map("suppliers")
+}
+
+// Additional Supporting Tables
+
+model InventoryMovement {
+  id            Int      @id @default(autoincrement()) @map("movement_id")
+  inventoryId   Int      @map("inventory_id")
+  userId        Int      @map("user_id")
+  movementType  String   @map("movement_type") // PURCHASE, SALE, ADJUSTMENT, LOSS, TRANSFER, CONSUMPTION, PRODUCTION
+  quantity      Decimal  @db.Decimal(10, 2)
+  unitCost      Decimal  @db.Decimal(10, 2) @map("unit_cost")
+  movementDate  DateTime @map("movement_date")
+  referenceId   Int?     @map("reference_id")
+  referenceType String?  @map("reference_type")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([inventoryId])
+  @@index([userId])
+  @@index([movementDate])
+  @@map("inventory_movements")
+}
+
+model Task {
+  id            Int      @id @default(autoincrement()) @map("task_id")
+  userId        Int      @map("user_id")
+  assignedTo    Int?     @map("assigned_to")
+  taskTitle     String   @map("task_title")
+  description   String?
+  priority      String   // LOW, MEDIUM, HIGH, URGENT
+  status        String   // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  dueDate       DateTime? @map("due_date")
+  completedDate DateTime? @map("completed_date")
+  animalBatchId Int?     @map("animal_batch_id")
+  assetId       Int?     @map("asset_id")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  creator     User         @relation("TaskCreator", fields: [userId], references: [id], onDelete: Cascade)
+  assignee    User?        @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+  animalBatch AnimalBatch? @relation(fields: [animalBatchId], references: [id], onDelete: SetNull)
+  asset       Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([animalBatchId])
+  @@index([assetId])
+  @@index([dueDate])
+  @@map("tasks")
 }
