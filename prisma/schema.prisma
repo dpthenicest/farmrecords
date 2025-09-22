@@ -18,7 +18,7 @@ model User {
   passwordHash String   @map("password_hash")
   firstName    String?  @map("first_name")
   lastName     String?  @map("last_name")
-  role         String   // OWNER, MANAGER, ACCOUNTANT, WORKER
+  role         String   // OWNER, ADMIN, MANAGER, WORKER
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

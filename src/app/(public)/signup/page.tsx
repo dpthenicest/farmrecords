@@ -4,13 +4,18 @@ import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useRouter } from "next/navigation"
+import { useSignup } from "@/hooks/useAuth"
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+  })
+
+  const { signup, loading, error } = useSignup()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.id]: e.target.value })
@@ -18,20 +23,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    setLoading(true)
-    const res = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-    setLoading(false)
-    if (res.ok) {
-      router.push("/login?signup=success")
-    } else {
-      const data = await res.json()
-      setError(data.error || "Signup failed")
-    }
+    await signup(form)
   }
 
   return (
@@ -44,8 +36,16 @@ export default function SignupPage() {
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-              <Input id="name" type="text" placeholder="Enter your full name" required value={form.name} onChange={handleChange} />
+              <label htmlFor="username" className="text-sm font-medium">Username / Business Name</label>
+              <Input id="username" type="text" placeholder="Enter your username" required value={form.username} onChange={handleChange} />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="firstName" className="text-sm font-medium">First Name</label>
+              <Input id="firstName" type="text" placeholder="Enter your first name" value={form.firstName} onChange={handleChange} />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="lastName" className="text-sm font-medium">Last Name</label>
+              <Input id="lastName" type="text" placeholder="Enter your last name" value={form.lastName} onChange={handleChange} />
             </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">Email</label>
@@ -69,4 +69,4 @@ export default function SignupPage() {
       </Card>
     </div>
   )
-} 
+}

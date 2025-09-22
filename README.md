@@ -73,4 +73,8 @@ The app uses NextAuth.js with credentials provider. Users can:
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL
 - **Authentication**: NextAuth.js
-- **State Management**: Zustand, React Context
+- **State Management**: React Context
+
+## Updates to Database
+- **isVerified**: Add to the User Model
+- **Enumeration**: Add Enumeration to attributes where necessary, like categoryType and TransactionType

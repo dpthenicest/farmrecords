@@ -7,13 +7,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import LogoutConfirmationModal from '@/components/modals/logout-confirmation-modal'
+import { Modal } from '@/components/ui/modal'
 
 function Header() {
   const [mounted, setMounted] = useState(false)
@@ -29,22 +27,16 @@ function Header() {
   const handleLogout = async () => {
     setLogoutLoading(true)
     try {
-      await signOut({ redirect: false }) // Don't auto-redirect
+      await signOut({ redirect: false })
       setShowLogoutModal(false)
-      router.push('/login') // Manually redirect
+      router.push('/login')
     } catch (error) {
       console.error('Logout error:', error)
       setLogoutLoading(false)
     }
   }
 
-  const openLogoutModal = () => {
-    setShowLogoutModal(true)
-  }
-
-  const closeLogoutModal = () => {
-    setShowLogoutModal(false)
-  }
+  const userName = session?.user?.name || session?.user?.email || 'User'
 
   if (!mounted) {
     return (
@@ -62,15 +54,13 @@ function Header() {
     )
   }
 
-  const userName = session?.user?.name || session?.user?.email || 'User'
-
   return (
     <>
       <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
         <div className="flex items-center space-x-4">
           <h2 className="text-lg font-semibold text-gray-900">Farm Records Admin</h2>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -79,15 +69,12 @@ function Header() {
                 <span>{userName}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            <DropdownMenuContent className="w-48">
               <DropdownMenuItem>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={openLogoutModal}>
+              <DropdownMenuItem onClick={() => setShowLogoutModal(true)}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </DropdownMenuItem>
@@ -96,14 +83,37 @@ function Header() {
         </div>
       </header>
 
-      <LogoutConfirmationModal
-        isOpen={showLogoutModal}
-        onClose={closeLogoutModal}
-        onConfirm={handleLogout}
-        loading={logoutLoading}
-      />
+      {/* Logout Modal */}
+      <Modal
+        open={showLogoutModal}
+        onOpenChange={setShowLogoutModal}
+        title="Confirm Logout"
+        description="Are you sure you want to log out of your account?"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setShowLogoutModal(false)}
+              disabled={logoutLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              disabled={logoutLoading}
+            >
+              {logoutLoading ? 'Logging out...' : 'Logout'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Logging out will end your session and redirect you to the login page.
+        </p>
+      </Modal>
     </>
   )
 }
 
-export default Header 
+export default Header

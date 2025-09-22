@@ -29,7 +29,7 @@ export default function LoginPage() {
     })
     setLoading(false)
     if (res?.ok) {
-      router.push("/records")
+      router.push("/dashboard")
     } else {
       setError("Invalid email or password")
     }
