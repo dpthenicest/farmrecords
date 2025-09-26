@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import {generateInvoiceNumber} from "@/lib/utils"
+import { generateInvoiceNumber } from "@/lib/utils"
 
 interface InvoiceFilters {
   page?: number
@@ -79,13 +79,15 @@ export const invoiceService = {
   async createInvoice(userId: number, data: any) {
     const { customerId, invoiceDate, dueDate, notes, items } = data
 
+    // Work with Prisma.Decimal instead of raw JS floats
     const subtotal = items.reduce(
-      (sum: number, item: any) => sum + item.quantity * item.unitPrice,
+      (sum: number, item: any) => sum + Number(item.quantity) * Number(item.unitPrice),
       0
     )
-    const taxAmount = subtotal *(Number(process.env.VAT) || 0.8); // 8% VAT example
+    const taxAmount = subtotal * (Number(process.env.VAT) || 0.0); // 8% VAT example
     const totalAmount = subtotal + taxAmount
 
+    // Get last invoice for sequential numbering
     const lastInvoice = await prisma.invoice.findFirst({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -107,11 +109,12 @@ export const invoiceService = {
         notes,
         items: {
           create: items.map((item: any) => ({
-            animalBatchId: item.animalBatchId,
+            inventoryId: item.inventoryId || null,
+            animalBatchId: item.animalBatchId || null,
             itemDescription: item.itemDescription,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.quantity * item.unitPrice,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            totalPrice: totalAmount,
           })),
         },
       },
