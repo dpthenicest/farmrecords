@@ -63,7 +63,7 @@ function Sidebar() {
           href: '/assets-inventory/animals',
           subItems: [
             { title: 'Animal Batches', href: '/assets-inventory/animals/batches' },
-            { title: 'Individual Animals', href: '/assets-inventory/animals/individuals' },
+            { title: 'Animals (Individual)', href: '/assets-inventory/animals/individuals' },
             { title: 'Animal Records', href: '/assets-inventory/animals/records' },
           ],
         },
@@ -92,7 +92,7 @@ function Sidebar() {
   // recursive renderer
   const renderSubItems = (items: SubItem[], parentKey: string, depth = 1) => {
     return (
-      <div className={cn('mt-1 space-y-1', depth === 1 ? 'ml-8' : 'ml-12')}>
+      <div className={cn('mt-1 space-y-1', depth === 1 ? 'ml-8' : 'ml-10')}>
         {items.map(subItem => {
           const key = `${parentKey}-${subItem.title}`
           const isExpanded = expandedItems.includes(key)
