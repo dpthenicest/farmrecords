@@ -1,5 +1,6 @@
-import ExpensesClient from './client'
+// app/financials/records/page.tsx
+import RecordClient from "./client"
 
-export default function ExpensesPage() {
-  return <ExpensesClient />
-} 
+export default function FinancialRecordsPage() {
+  return <RecordClient />
+}

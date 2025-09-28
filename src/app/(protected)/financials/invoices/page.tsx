@@ -1,5 +1,5 @@
-import IncomeClient from './client'
+import InvoicesClient from "./client"
 
-export default function IncomePage() {
-  return <IncomeClient />
-} 
+export default function Page() {
+  return <InvoicesClient />
+}

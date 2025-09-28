@@ -5,6 +5,7 @@ import { useRecentTransactions } from "@/hooks/useDashboard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export function RecentTransactions() {
   const { data, loading, error } = useRecentTransactions(5)
@@ -49,42 +50,44 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="py-2">Date</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Description</th>
-                <th className="py-2 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {transactions.map((transaction: any) => (
-                <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                  <td className="py-2">
-                    {new Date(transaction.transactionDate).toLocaleDateString('en-GB')}
-                  </td>
-                  <td className="py-2">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                      transaction.transactionType === 'INCOME' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                <TableRow key={transaction.id} className="hover:bg-gray-50">
+                  <TableCell>
+                    {new Date(transaction.transactionDate).toLocaleDateString("en-GB")}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-medium ${transaction.transactionType === "INCOME"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                        }`}
+                    >
                       {transaction.transactionType}
                     </span>
-                  </td>
-                  <td className="py-2">{transaction.description}</td>
-                  <td className="py-2 text-right font-medium">
+                  </TableCell>
+                  <TableCell>{transaction.description}</TableCell>
+                  <TableCell className="text-right font-medium">
                     ₦{parseFloat(transaction.amount).toLocaleString()}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
+
         </div>
         <div className="mt-4 text-center">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/financials/records')}
           >
             View All Transactions

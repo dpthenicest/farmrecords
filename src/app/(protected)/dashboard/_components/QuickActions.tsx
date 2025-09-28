@@ -9,8 +9,9 @@ export function QuickActions() {
 
   const actions = [
     { label: "+ New Invoice", href: "/financials/invoices/new", color: "bg-blue-600 hover:bg-blue-700" },
+    { label: "+ Make Order", href: "/financials/invoices/new", color: "bg-yellow-600 hover:bg-yellow-700" },
     { label: "+ Add Record", href: "/assets-inventory/animals/records/new", color: "bg-green-600 hover:bg-green-700" },
-    { label: "+ Create Task", href: "/tasks/new", color: "bg-purple-600 hover:bg-purple-700" },
+    // { label: "+ Create Task", href: "/tasks/new", color: "bg-purple-600 hover:bg-purple-700" },
     { label: "Check Inventory", href: "/assets-inventory/inventory", color: "bg-orange-600 hover:bg-orange-700" },
   ]
 

@@ -1,5 +1,7 @@
-import ProfitLossClient from './client'
+"use client"
 
-export default function ProfitLossPage() {
-  return <ProfitLossClient />
-} 
+import PurchaseOrdersClient from "./client"
+
+export default function PurchaseOrdersPage() {
+  return <PurchaseOrdersClient />
+}

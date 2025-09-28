@@ -10,6 +10,7 @@ interface FetchRecordsParams {
   startDate?: string;
   endDate?: string;
   categoryId?: number;
+  transactionType?: string;
 }
 
 export async function getFinancialRecords(params: FetchRecordsParams) {
@@ -22,6 +23,7 @@ export async function getFinancialRecords(params: FetchRecordsParams) {
     startDate,
     endDate,
     categoryId,
+    transactionType
   } = params;
 
   const where: any = {};
@@ -33,6 +35,7 @@ export async function getFinancialRecords(params: FetchRecordsParams) {
 
   if (type) where.transactionType = type;
   if (categoryId) where.categoryId = categoryId;
+  if (transactionType) where.transactionType = transactionType;
   if (startDate || endDate) {
     where.transactionDate = {};
     if (startDate) where.transactionDate.gte = new Date(startDate);

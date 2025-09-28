@@ -1,71 +1,36 @@
+// app/financials/records/client.tsx
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { ViewRecordModal } from '@/components/modals/view-record-modal'
+import { useState } from "react"
+import { RecordsHeader } from "./_components/RecordsHeader"
+import { RecordsFilterBar } from "./_components/RecordsFilterBar"
+import { RecordsTable } from "./_components/RecordsTable"
+import { TransactionModal } from "./_components/TransactionModal"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function ExpensesClient() {
-  const { data: session } = useSession()
-  const [expenseRecords, setExpenseRecords] = useState([])
-  const [totalExpenses, setTotalExpenses] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [isViewRecordModalOpen, setIsViewRecordModalOpen] = useState(false)
-
-  useEffect(() => {
-    const fetchExpenseRecords = async () => {
-      if (!session?.user?.id) return
-      
-      try {
-        setIsLoading(true)
-        const response = await fetch(`/api/records?categoryType=EXPENSE&userId=${session.user.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setExpenseRecords(data.records || [])
-          
-          // Calculate total expenses
-          const total = data.records?.reduce((sum: number, record: any) => {
-            return sum + (record.unitPrice * record.quantity)
-          }, 0) || 0
-          setTotalExpenses(total)
-        }
-      } catch (error) {
-        console.error('Error fetching expense records:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchExpenseRecords()
-  }, [session?.user?.id])
+export default function RecordClient() {
+  const [openModal, setOpenModal] = useState(false)
+  const [filters, setFilters] = useState({
+    transactionType: "" as "" | "INCOME" | "EXPENSE" | "TRANSFER",
+    categoryId: undefined as number | undefined,
+    startDate: undefined as string | undefined,
+    endDate: undefined as string | undefined,
+  })
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Expense Records</h1>
-      {/* Analytics summary */}
-      <div className="flex space-x-6 mb-6">
-        <div className="bg-red-50 rounded-lg p-4 flex flex-col items-center shadow border border-red-100">
-          <span className="text-lg font-semibold text-red-700">Total Expenses</span>
-          <span className="text-2xl font-bold text-red-900">
-            {isLoading ? 'Loading...' : `₦${totalExpenses.toLocaleString()}`}
-          </span>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4 flex flex-col items-center shadow border border-blue-100">
-          <span className="text-lg font-semibold text-blue-700">Number of Records</span>
-          <span className="text-2xl font-bold text-blue-900">
-            {isLoading ? 'Loading...' : expenseRecords.length}
-          </span>
-        </div>
-      </div>
-      
-      <ViewRecordModal
-        isOpen={isViewRecordModalOpen}
-        onClose={() => {
-          setIsViewRecordModalOpen(false)
-          setSelectedRecord(null)
-        }}
-        record={selectedRecord}
-      />
+    <div className="space-y-6">
+      <RecordsHeader onAddTransaction={() => setOpenModal(true)} />
+      <RecordsFilterBar filters={filters} setFilters={setFilters} />
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Records</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RecordsTable filters={filters} />
+        </CardContent>
+      </Card>
+      <TransactionModal open={openModal} onOpenChange={setOpenModal} />
     </div>
   )
-} 
+}

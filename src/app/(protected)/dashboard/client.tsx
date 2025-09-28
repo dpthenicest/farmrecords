@@ -76,7 +76,7 @@ export function DashboardContent() {
         </div>
         <div className="space-y-4">
           <LowStockAlerts />
-          <PendingTasks />
+          {/* <PendingTasks /> */}
         </div>
       </div>
     </>

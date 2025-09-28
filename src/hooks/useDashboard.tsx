@@ -80,7 +80,7 @@ export function useLowStockAlerts() {
         if (!res.ok) throw new Error("Failed to fetch low stock alerts")
         return res.json()
       })
-      .then((json) => isMounted && setData(json))
+      .then((json) => isMounted && setData(json.data.items || []))
       .catch((err) => isMounted && setError(err))
       .finally(() => isMounted && setLoading(false))
 

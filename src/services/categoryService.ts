@@ -19,14 +19,17 @@ export async function getCategoriesService(userId: number, role: string, filters
   }
 
   if (type) where.categoryType = type;
-  if (isActive !== undefined) where.isActive = isActive === "true";
 
-  if (startDate && endDate) {
-    where.createdAt = {
-      gte: new Date(startDate),
-      lte: new Date(endDate),
-    };
+  if (isActive === "true") where.isActive = true;
+  if (isActive === "false") where.isActive = false;
+
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) where.createdAt.lte = new Date(endDate);
   }
+
+  console.log("Category where filter:", where);
 
   const total = await prisma.salesExpenseCategory.count({ where });
   const categories = await prisma.salesExpenseCategory.findMany({

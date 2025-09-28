@@ -15,6 +15,7 @@ export async function GET(req: Request) {
   const type = searchParams.get("type")?.toUpperCase() as "INCOME" | "EXPENSE" || undefined;
   const startDate = searchParams.get("startDate") || undefined;
   const endDate = searchParams.get("endDate") || undefined;
+  const transactionType = searchParams.get("transactionType") || undefined;
   const categoryId = searchParams.get("categoryId")
     ? parseInt(searchParams.get("categoryId")!)
     : undefined;
@@ -28,6 +29,7 @@ export async function GET(req: Request) {
     startDate,
     endDate,
     categoryId,
+    transactionType
   });
 
   return NextResponse.json({ success: true, data });

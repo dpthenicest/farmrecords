@@ -10,7 +10,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     const received = await purchaseOrderService.receivePurchaseOrder(
       Number(params.id),
       Number(auth.user?.id),
-      auth.user?.role
+      auth.role
     )
 
     if (!received) return NextResponse.json({ error: "Not found" }, { status: 404 })

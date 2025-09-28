@@ -1,79 +1,139 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import IncomeTableView from './components/table-view'
-import { ViewRecordModal } from '@/components/modals/view-record-modal'
+import * as React from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useInvoices } from "@/hooks/useInvoices"
+import { InvoiceTable } from "./_components/InvoiceTable"
+import { InvoiceFilters } from "./_components/InvoiceFilters"
+import { InvoiceDetails } from "./_components/InvoiceDetails"
+import { InvoiceForm } from "./_components/InvoiceForm"
+import { Modal } from "@/components/ui/modal"
 
-export default function IncomeClient() {
-  const { data: session } = useSession()
-  const [incomeRecords, setIncomeRecords] = useState([])
-  const [totalIncome, setTotalIncome] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [isViewRecordModalOpen, setIsViewRecordModalOpen] = useState(false)
+interface AppliedFilters {
+  search: string
+  status: string
+  startDate: string
+  endDate: string
+}
 
-  useEffect(() => {
-    const fetchIncomeRecords = async () => {
-      if (!session?.user?.id) return
-      
-      try {
-        setIsLoading(true)
-        const response = await fetch(`/api/records?categoryType=INCOME&userId=${session.user.id}`)
-        if (response.ok) {
-          const data = await response.json()
-          setIncomeRecords(data.records || [])
-          
-          // Calculate total income
-          const total = data.records?.reduce((sum: number, record: any) => {
-            return sum + (record.unitPrice * record.quantity)
-          }, 0) || 0
-          setTotalIncome(total)
-        }
-      } catch (error) {
-        console.error('Error fetching income records:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+export default function InvoicesClient() {
+  // pagination state
+  const [page, setPage] = React.useState(1)
+  const [limit, setLimit] = React.useState(10)
 
-    fetchIncomeRecords()
-  }, [session?.user?.id])
+  // pending filter state
+  const [pendingSearch, setPendingSearch] = React.useState("")
+  const [pendingStatus, setPendingStatus] = React.useState<string>("all")
+  const [pendingStartDate, setPendingStartDate] = React.useState("")
+  const [pendingEndDate, setPendingEndDate] = React.useState("")
+
+  // applied filter state
+  const [appliedFilters, setAppliedFilters] = React.useState<AppliedFilters>({
+    search: "",
+    status: "all",
+    startDate: "",
+    endDate: "",
+  })
+
+  const { invoices, totalPages, loading, error, refetch } = useInvoices({
+    page,
+    limit,
+    status: appliedFilters.status !== "all" ? appliedFilters.status.toUpperCase() : undefined,
+    startDate: appliedFilters.startDate,
+    endDate: appliedFilters.endDate,
+    customerId: appliedFilters.search ? Number(appliedFilters.search) : undefined, // example if backend filters by ID
+  })
+
+  const [showForm, setShowForm] = React.useState(false)
+  const [selectedInvoice, setSelectedInvoice] = React.useState<any>(null)
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      search: pendingSearch,
+      status: pendingStatus,
+      startDate: pendingStartDate,
+      endDate: pendingEndDate,
+    })
+    setPage(1) // reset page when filters change
+  }
+
+  const handleDateChange = (range: { start: string; end: string }) => {
+    setPendingStartDate(range.start)
+    setPendingEndDate(range.end)
+  }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Income Records</h1>
-      {/* Analytics summary */}
-      <div className="flex space-x-6 mb-6">
-        <div className="bg-green-50 rounded-lg p-4 flex flex-col items-center shadow border border-green-100">
-          <span className="text-lg font-semibold text-green-700">Total Income</span>
-          <span className="text-2xl font-bold text-green-900">
-            {isLoading ? 'Loading...' : `₦${totalIncome.toLocaleString()}`}
-          </span>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4 flex flex-col items-center shadow border border-blue-100">
-          <span className="text-lg font-semibold text-blue-700">Number of Records</span>
-          <span className="text-2xl font-bold text-blue-900">
-            {isLoading ? 'Loading...' : incomeRecords.length}
-          </span>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Invoices</h1>
+        <Button onClick={() => setShowForm(true)}>+ Create Invoice</Button>
       </div>
-      <IncomeTableView 
-        records={incomeRecords} 
-        isLoading={isLoading}
-        onViewRecord={(record: any) => {
-          setSelectedRecord(record)
-          setIsViewRecordModalOpen(true)
-        }}
+
+      {/* Filters */}
+      <InvoiceFilters
+        search={pendingSearch}
+        onSearch={setPendingSearch}
+        status={pendingStatus}
+        onStatusChange={setPendingStatus}
+        startDate={pendingStartDate}
+        endDate={pendingEndDate}
+        onDateChange={handleDateChange}
+        onApplyFilters={handleApplyFilters}
       />
-      <ViewRecordModal
-        isOpen={isViewRecordModalOpen}
-        onClose={() => {
-          setIsViewRecordModalOpen(false)
-          setSelectedRecord(null)
-        }}
-        record={selectedRecord}
-      />
+
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoices</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InvoiceTable
+            invoices={invoices}
+            totalPages={totalPages}
+            page={page}
+            limit={limit}
+            loading={loading}
+            error={error}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+            onView={(invoice) => setSelectedInvoice(invoice)}
+            onEdit={(invoice) => {
+              setSelectedInvoice(invoice)
+              setShowForm(true)
+            }}
+            onDelete={(invoice) => console.log("delete", invoice)}
+            onSend={(invoice) => console.log("send", invoice)}
+            onMarkPaid={(invoice) => console.log("paid", invoice)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Modals */}
+      <Modal
+        open={!!selectedInvoice && !showForm}
+        onOpenChange={() => setSelectedInvoice(null)}
+        title="Invoice Details"
+      >
+        {selectedInvoice && (
+          <InvoiceDetails invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
+        )}
+      </Modal>
+      <Modal
+        open={showForm}
+        onOpenChange={setShowForm}
+        title={selectedInvoice ? "Edit Invoice" : "Create Invoice"}
+      >
+        <InvoiceForm
+          invoice={selectedInvoice}
+          onClose={() => {
+            setSelectedInvoice(null)
+            setShowForm(false)
+          }}
+          onSaved={refetch}
+        />
+      </Modal>
     </div>
   )
-} 
+}

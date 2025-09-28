@@ -45,7 +45,7 @@ export const invoiceService = {
           items: true,
         },
         skip: (page - 1) * limit,
-        take: limit,
+        take: Number(limit),
         orderBy: { [sortBy]: sortOrder },
       }),
     ])

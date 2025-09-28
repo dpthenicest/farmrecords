@@ -9,6 +9,8 @@ import { AlertTriangle } from "lucide-react"
 export function LowStockAlerts() {
   const { data, loading, error } = useLowStockAlerts()
 
+  console.log("Low Stock Alerts Data:", data)
+
   if (loading) {
     return (
       <Card>
@@ -45,7 +47,7 @@ export function LowStockAlerts() {
     )
   }
 
-  const lowStockItems = data?.data || []
+  const lowStockItems = data || []
 
   if (lowStockItems.length === 0) {
     return (
@@ -66,19 +68,27 @@ export function LowStockAlerts() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-orange-500" />
-          Low Stock Alerts
+        <CardTitle className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-500" />
+            Low Stock Alerts
+          </div>
+          <span className="text-sm font-normal text-gray-500">
+            {lowStockItems.length} item{lowStockItems.length > 1 ? "s" : ""}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="max-h-[345px] overflow-y-auto space-y-3 pr-1">
           {lowStockItems.map((item: any) => (
-            <div key={item.id} className="flex justify-between items-center p-3 border border-orange-200 bg-orange-50 rounded-lg">
+            <div
+              key={item.id}
+              className="flex justify-between items-center p-3 border border-orange-200 bg-orange-50 rounded-lg"
+            >
               <div className="flex-1">
                 <p className="font-medium text-sm">{item.itemName}</p>
                 <p className="text-xs text-gray-600">
-                  Stock: {item.currentQuantity} {item.unitOfMeasure} 
+                  Stock: {item.currentQuantity} {item.unitOfMeasure}{" "}
                   (Reorder at: {item.reorderLevel})
                 </p>
               </div>
