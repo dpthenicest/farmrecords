@@ -9,7 +9,7 @@ export function RecordsHeader({ onAddTransaction }: { onAddTransaction: () => vo
       <h1 className="text-2xl font-semibold">Financial Records</h1>
       <div className="flex gap-2">
         <Button variant="outline">Export to Excel</Button>
-        <Button onClick={onAddTransaction}>Add Transaction</Button>
+        {/* <Button onClick={onAddTransaction}>Add Transaction</Button> */}
       </div>
     </div>
   )
