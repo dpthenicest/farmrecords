@@ -115,21 +115,46 @@ export interface ApiSuccessOptions<T> {
  * @param {ApiSuccessOptions<T>} options The options for the success response.
  * @returns {NextResponse} A Next.js server response object with a JSON body.
  */
+/**
+ * Recursively converts undefined values to null for JSON consistency
+ */
+function normalizeForJson(value: any): any {
+  if (value === undefined) {
+    return null;
+  }
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(normalizeForJson);
+  }
+  if (value.constructor === Object) {
+    const normalized: any = {};
+    for (const [key, val] of Object.entries(value)) {
+      normalized[key] = normalizeForJson(val);
+    }
+    return normalized;
+  }
+  return value;
+}
+
 export function apiSuccess<T>({
   data,
   message,
   status,
   pagination,
 }: ApiSuccessOptions<T>) {
-  return NextResponse.json(
-    {
-      success: true,
-      message,
-      data,
-      ...(pagination && { pagination }),
-    },
-    { status }
-  );
+  const responseBody: any = {
+    success: true,
+    message,
+    data: normalizeForJson(data),
+  }
+  
+  if (pagination) {
+    responseBody.pagination = normalizeForJson(pagination)
+  }
+  
+  return NextResponse.json(responseBody, { status });
 }
 
 /**

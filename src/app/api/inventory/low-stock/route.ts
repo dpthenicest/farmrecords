@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const threshold = Number(url.searchParams.get("threshold")) || 5;
 
-    const items = await inventoryService.getLowStock(Number(auth.user?.id), auth.user?.role === "ADMIN");
+    const items = await inventoryService.getLowStockItems(Number(auth.user?.id), auth.user?.role === "ADMIN");
 
     return NextResponse.json({ success: true, data: items });
   } catch (error) {

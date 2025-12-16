@@ -7,11 +7,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./dropdown-menu"
-// IMPORTED: Send, CheckCircle (for Mark Paid), and existing icons
-import { MoreHorizontal, Pencil, Trash, View, Send, CheckCircle } from "lucide-react"
+// IMPORTED: Send, CheckCircle (for Mark Paid), Settings (for Adjust), and existing icons
+import { MoreHorizontal, Pencil, Trash, View, Send, CheckCircle, Settings } from "lucide-react"
 import { Button } from "./button"
 
-// UPDATED: Added props for Send and MarkPaid actions and visibility flags
+// UPDATED: Added props for Send, MarkPaid, and Adjust actions and visibility flags
 interface ActionMenuProps {
   onView?: () => void
   onEdit?: () => void
@@ -19,6 +19,7 @@ interface ActionMenuProps {
   onSend?: () => void
   onMarkPaid?: () => void
   onReceive?: () => void
+  onAdjust?: () => void
   
   showView?: boolean
   showEdit?: boolean
@@ -26,6 +27,7 @@ interface ActionMenuProps {
   showSend?: boolean
   showMarkPaid?: boolean
   showReceive?: boolean
+  showAdjust?: boolean
 }
 
 export function ActionMenu({
@@ -35,6 +37,7 @@ export function ActionMenu({
   onSend,
   onMarkPaid,
   onReceive,
+  onAdjust,
   
   showView = true,
   showEdit = true,
@@ -42,6 +45,7 @@ export function ActionMenu({
   showSend = false, // Defaulting to false since these are invoice-specific
   showMarkPaid = false, // Defaulting to false since these are invoice-specific
   showReceive = false,
+  showAdjust = false,
 }: ActionMenuProps) {
   return (
     <DropdownMenu>
@@ -77,6 +81,13 @@ export function ActionMenu({
         {showReceive && (
           <DropdownMenuItem onClick={onReceive} className="flex justify-start text-purple-600 focus:bg-purple-50">
             <CheckCircle className="mr-2 h-4 w-4" /> Receive
+          </DropdownMenuItem>
+        )}
+
+        {/* Adjust Action */}
+        {showAdjust && (
+          <DropdownMenuItem onClick={onAdjust} className="flex justify-start text-blue-600 focus:bg-blue-50">
+            <Settings className="mr-2 h-4 w-4" /> Adjust Stock
           </DropdownMenuItem>
         )}
 

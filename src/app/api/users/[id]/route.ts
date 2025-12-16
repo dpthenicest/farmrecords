@@ -3,22 +3,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { userService } from "@/services/userService"
 import { requireSelfOrRole } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await requireSelfOrRole(params.id, ["ADMIN"])
     if (!auth.authorized) {
-      return NextResponse.json({ success: false, error: auth.error }, { status: 401 })
+      return auth.error === "Unauthorized" ? Errors.Unauthorized() : Errors.Forbidden()
     }
 
     const user = await userService.getUserById(Number(params.id))
     if (!user) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
+      return Errors.NotFound()
     }
 
-    return NextResponse.json({ success: true, data: user })
+    return Successes.Ok(user)
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    return Errors.Internal()
   }
 }
 
@@ -26,14 +27,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const auth = await requireSelfOrRole(params.id, ["ADMIN"])
     if (!auth.authorized) {
-      return NextResponse.json({ success: false, error: auth.error }, { status: 401 })
+      return auth.error === "Unauthorized" ? Errors.Unauthorized() : Errors.Forbidden()
     }
 
     const body = await req.json()
     const user = await userService.updateUser(Number(params.id), body)
-    return NextResponse.json({ success: true, data: user })
+    return Successes.Ok(user)
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    // Check if it's a validation error
+    if (err.message.includes('validation') || err.message.includes('required') || err.message.includes('invalid')) {
+      return Errors.Validation([{ message: err.message }])
+    }
+    return Errors.Internal()
   }
 }
 
@@ -41,12 +46,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   try {
     const auth = await requireSelfOrRole(params.id, ["ADMIN"])
     if (!auth.authorized) {
-      return NextResponse.json({ success: false, error: auth.error }, { status: 401 })
+      return auth.error === "Unauthorized" ? Errors.Unauthorized() : Errors.Forbidden()
     }
 
     await userService.deleteUser(Number(params.id))
-    return NextResponse.json({ success: true, message: "User deleted" })
+    return Successes.NoContent()
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 400 })
+    return Errors.Internal()
   }
 }

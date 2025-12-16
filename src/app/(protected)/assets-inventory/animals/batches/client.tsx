@@ -9,6 +9,7 @@ import { AnimalBatchFilters } from "./_components/AnimalBatchFilters"
 import { AnimalBatchForm } from "./_components/AnimalBatchForm"
 import { AnimalBatchGrid } from "./_components/AnimalBatchGrid"
 import { AnimalBatchTable } from "./_components/AnimalBatchTable" // assume exists
+import { AnimalBatchDetails } from "./_components/AnimalBatchDetails"
 
 export default function AnimalBatchesClient() {
   const [page, setPage] = React.useState(1)
@@ -89,17 +90,11 @@ export default function AnimalBatchesClient() {
 
       {/* Batch Details Modal */}
       <Modal open={!!selectedBatchId} onOpenChange={() => setSelectedBatchId(null)} title="Batch Details">
-        {batchLoading ? <p>Loading...</p> : selectedBatch ? (
-          <div className="space-y-4">
-            <p><strong>Batch Code:</strong> {selectedBatch.batchCode}</p>
-            <p><strong>Species:</strong> {selectedBatch.species}</p>
-            <p><strong>Breed:</strong> {selectedBatch.breed}</p>
-            <p><strong>Quantity:</strong> {selectedBatch.currentQuantity}</p>
-            <p><strong>Status:</strong> {selectedBatch.batchStatus}</p>
-            <p><strong>Location:</strong> {selectedBatch.location}</p>
-          </div>
-        ) : (
-          <p>Batch not found.</p>
+        {selectedBatchId && (
+          <AnimalBatchDetails 
+            batchId={selectedBatchId} 
+            onClose={() => setSelectedBatchId(null)} 
+          />
         )}
       </Modal>
 

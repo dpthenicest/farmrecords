@@ -11,6 +11,7 @@ interface QueryOptions {
   recordType?: string;
   batchId?: number;
   animalId?: number;
+  healthStatus?: string;
 }
 
 export async function getAnimalRecords(user: any, options: QueryOptions) {
@@ -24,6 +25,7 @@ export async function getAnimalRecords(user: any, options: QueryOptions) {
     recordType,
     batchId,
     animalId,
+    healthStatus,
   } = options;
 
   const where: any = {};
@@ -33,6 +35,7 @@ export async function getAnimalRecords(user: any, options: QueryOptions) {
   if (recordType) where.recordType = recordType;
   if (batchId) where.batchId = batchId;
   if (animalId) where.animalId = animalId;
+  if (healthStatus) where.healthStatus = healthStatus;
   if (startDate || endDate) {
     where.recordDate = {};
     if (startDate) where.recordDate.gte = new Date(startDate);

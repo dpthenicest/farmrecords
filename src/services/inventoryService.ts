@@ -1,5 +1,6 @@
 // app/api/inventory/service.ts
 import { prisma } from "@/lib/prisma";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface PaginationOptions {
   page?: number;
@@ -11,6 +12,28 @@ interface PaginationOptions {
   sortOrder?: "asc" | "desc";
   userId?: number;
   isAdmin?: boolean;
+}
+
+interface InventoryMovementData {
+  inventoryId: number;
+  movementType: string;
+  quantity: number;
+  unitCost?: number;
+  referenceId?: number;
+  referenceType?: string;
+  notes?: string;
+}
+
+interface InvoiceItem {
+  inventoryId?: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+interface PurchaseOrderItem {
+  inventoryId?: number;
+  quantity: number;
+  unitPrice: number;
 }
 
 export const inventoryService = {
@@ -140,22 +163,18 @@ export const inventoryService = {
     };
   },
   async getById(id: number, userId: number, isAdmin: boolean) {
-    if (isAdmin) {
-      return prisma.inventory.findMany({
-        include: {
-          category: true,
-          user: true,
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    const where: any = { id };
+    
+    if (!isAdmin) {
+      where.userId = userId;
     }
 
-    return prisma.inventory.findMany({
-      where: { userId },
+    return prisma.inventory.findFirst({
+      where,
       include: {
         category: true,
+        user: true,
       },
-      orderBy: { createdAt: "desc" },
     });
   },
 
@@ -206,10 +225,16 @@ export const inventoryService = {
     });
     if (!inventory) throw new Error("Not found");
 
+    // Validate that the adjustment won't result in negative stock
+    const newQuantity = inventory.currentQuantity.plus(quantity);
+    if (newQuantity.lt(0)) {
+      throw new Error("Insufficient inventory. Cannot reduce quantity below zero.");
+    }
+
     const updated = await prisma.inventory.update({
       where: { id },
       data: {
-        currentQuantity: inventory.currentQuantity.plus(quantity),
+        currentQuantity: newQuantity,
       },
     });
 
@@ -226,5 +251,235 @@ export const inventoryService = {
     });
 
     return { inventory: updated, movement };
+  },
+
+  // Enhanced methods for automatic inventory movement creation
+
+  async processMovement(movementData: InventoryMovementData, userId: number): Promise<any> {
+    const { inventoryId, movementType, quantity, unitCost, referenceId, referenceType, notes } = movementData;
+
+    // Get current inventory
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: inventoryId }
+    });
+
+    if (!inventory) {
+      throw new Error("Inventory item not found");
+    }
+
+    // Validate quantity for outgoing movements
+    if (["SALE", "CONSUMPTION", "LOSS"].includes(movementType)) {
+      const newQuantity = inventory.currentQuantity.minus(Math.abs(quantity));
+      if (newQuantity.lt(0)) {
+        throw new Error(`Insufficient inventory. Available: ${inventory.currentQuantity}, Requested: ${Math.abs(quantity)}`);
+      }
+    }
+
+    // Calculate new quantity based on movement type
+    let quantityChange = new Decimal(quantity);
+    if (["SALE", "CONSUMPTION", "LOSS"].includes(movementType)) {
+      quantityChange = quantityChange.negated();
+    }
+
+    // Update inventory quantity
+    const updatedInventory = await prisma.inventory.update({
+      where: { id: inventoryId },
+      data: {
+        currentQuantity: inventory.currentQuantity.plus(quantityChange)
+      }
+    });
+
+    // Create movement record
+    const movement = await prisma.inventoryMovement.create({
+      data: {
+        inventoryId,
+        userId,
+        movementType,
+        quantity: Math.abs(quantity),
+        unitCost: unitCost || inventory.unitCost,
+        movementDate: new Date(),
+        referenceId,
+        referenceType,
+        notes
+      }
+    });
+
+    return { inventory: updatedInventory, movement };
+  },
+
+  async adjustFromPurchaseOrder(poItems: PurchaseOrderItem[], poId: number, userId: number): Promise<any[]> {
+    const movements = [];
+
+    for (const item of poItems) {
+      if (item.inventoryId) {
+        try {
+          const movement = await this.processMovement({
+            inventoryId: item.inventoryId,
+            movementType: "PURCHASE",
+            quantity: item.quantity,
+            unitCost: item.unitPrice,
+            referenceId: poId,
+            referenceType: "PURCHASE_ORDER",
+            notes: `Purchase order receipt - PO #${poId}`
+          }, userId);
+          movements.push(movement);
+        } catch (error) {
+          console.error(`Failed to process inventory movement for item ${item.inventoryId}:`, error);
+          // Continue processing other items
+        }
+      }
+    }
+
+    return movements;
+  },
+
+  async adjustFromInvoice(invoiceItems: InvoiceItem[], invoiceId: number, userId: number): Promise<any[]> {
+    const movements = [];
+
+    for (const item of invoiceItems) {
+      if (item.inventoryId) {
+        try {
+          const movement = await this.processMovement({
+            inventoryId: item.inventoryId,
+            movementType: "SALE",
+            quantity: item.quantity,
+            unitCost: item.unitPrice,
+            referenceId: invoiceId,
+            referenceType: "INVOICE",
+            notes: `Invoice sale - Invoice #${invoiceId}`
+          }, userId);
+          movements.push(movement);
+        } catch (error) {
+          console.error(`Failed to process inventory movement for item ${item.inventoryId}:`, error);
+          // Continue processing other items
+        }
+      }
+    }
+
+    return movements;
+  },
+
+  async getLowStockItems(userId: number, isAdmin: boolean): Promise<any[]> {
+    const where: any = {};
+    
+    if (!isAdmin) {
+      where.userId = userId;
+    }
+
+    // Use raw query to compare decimal fields
+    let lowStockItems;
+    if (!isAdmin) {
+      lowStockItems = await prisma.$queryRaw`
+        SELECT i.*, c.category_name, c.category_type
+        FROM inventory i
+        LEFT JOIN sales_expense_categories c ON i.category_id = c.category_id
+        WHERE i.current_quantity <= i.reorder_level AND i.user_id = ${userId}
+        ORDER BY (i.current_quantity / i.reorder_level) ASC
+      `;
+    } else {
+      lowStockItems = await prisma.$queryRaw`
+        SELECT i.*, c.category_name, c.category_type
+        FROM inventory i
+        LEFT JOIN sales_expense_categories c ON i.category_id = c.category_id
+        WHERE i.current_quantity <= i.reorder_level
+        ORDER BY (i.current_quantity / i.reorder_level) ASC
+      `;
+    }
+
+    return lowStockItems as any[];
+  },
+
+  async getMovementHistory(inventoryId: number, userId: number, isAdmin: boolean): Promise<any[]> {
+    const where: any = { inventoryId };
+    
+    if (!isAdmin) {
+      where.userId = userId;
+    }
+
+    return prisma.inventoryMovement.findMany({
+      where,
+      orderBy: { movementDate: "desc" },
+      include: {
+        inventory: {
+          select: {
+            itemName: true,
+            itemCode: true
+          }
+        }
+      }
+    });
+  },
+
+  // Validation functions
+  validateQuantity(quantity: number): string[] {
+    const errors: string[] = [];
+
+    if (typeof quantity !== 'number' || isNaN(quantity)) {
+      errors.push("Quantity must be a valid number");
+    }
+
+    if (quantity < 0) {
+      errors.push("Quantity cannot be negative");
+    }
+
+    return errors;
+  },
+
+  validateInventoryData(data: any): string[] {
+    const errors: string[] = [];
+
+    if (!data.itemName || data.itemName.trim().length === 0) {
+      errors.push("Item name is required");
+    }
+
+    if (!data.itemCode || data.itemCode.trim().length === 0) {
+      errors.push("Item code is required");
+    }
+
+    if (!data.unitOfMeasure || data.unitOfMeasure.trim().length === 0) {
+      errors.push("Unit of measure is required");
+    }
+
+    if (typeof data.currentQuantity !== 'number' || data.currentQuantity < 0) {
+      errors.push("Current quantity must be a non-negative number");
+    }
+
+    if (typeof data.reorderLevel !== 'number' || data.reorderLevel < 0) {
+      errors.push("Reorder level must be a non-negative number");
+    }
+
+    if (typeof data.unitCost !== 'number' || data.unitCost < 0) {
+      errors.push("Unit cost must be a non-negative number");
+    }
+
+    if (typeof data.sellingPrice !== 'number' || data.sellingPrice < 0) {
+      errors.push("Selling price must be a non-negative number");
+    }
+
+    if (data.expiryDate && isNaN(new Date(data.expiryDate).getTime())) {
+      errors.push("Expiry date must be a valid date");
+    }
+
+    return errors;
+  },
+
+  // Alert generation for low stock
+  async generateLowStockAlerts(userId: number, isAdmin: boolean): Promise<any[]> {
+    const lowStockItems = await this.getLowStockItems(userId, isAdmin);
+    
+    const alerts = lowStockItems.map((item: any) => ({
+      type: "LOW_STOCK",
+      severity: item.current_quantity === 0 ? "CRITICAL" : "WARNING",
+      title: `Low Stock Alert: ${item.item_name}`,
+      message: `${item.item_name} (${item.item_code}) is ${item.current_quantity === 0 ? 'out of stock' : 'below reorder level'}. Current: ${item.current_quantity}, Reorder Level: ${item.reorder_level}`,
+      itemId: item.inventory_id,
+      itemName: item.item_name,
+      itemCode: item.item_code,
+      currentQuantity: item.current_quantity,
+      reorderLevel: item.reorder_level,
+      createdAt: new Date()
+    }));
+
+    return alerts;
   },
 };

@@ -47,7 +47,7 @@ export function InvoiceTable({
           {invoices.map((inv: any) => (
             <TableRow key={inv.id}>
               <TableCell>{inv.invoiceNumber}</TableCell>
-              <TableCell>{inv.customer?.name}</TableCell>
+              <TableCell>{inv.customer?.customerName}</TableCell>
               <TableCell>{new Date(inv.invoiceDate).toLocaleDateString()}</TableCell>
               <TableCell>{new Date(inv.dueDate).toLocaleDateString()}</TableCell>
               <TableCell>₦{inv.totalAmount}</TableCell>

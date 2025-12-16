@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 import {
   getAnimals,
   createAnimal,
@@ -9,7 +10,7 @@ import {
 export async function GET(req: Request) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get("page") || "1", 10)
@@ -27,9 +28,9 @@ export async function GET(req: Request) {
     }
 
     const animals = await getAnimals(Number(auth.user?.id), auth.user?.role, filters, { page, limit })
-    return NextResponse.json(animals)
+    return Successes.Ok(animals)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return Errors.Internal()
   }
 }
 
@@ -37,13 +38,16 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const body = await req.json()
     const animal = await createAnimal(Number(auth.user?.id), body)
 
-    return NextResponse.json(animal, { status: 201 })
+    return Successes.Created(animal)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error.message.includes('validation') || error.message.includes('required') || error.message.includes('invalid')) {
+      return Errors.Validation([{ message: error.message }])
+    }
+    return Errors.Internal()
   }
 }

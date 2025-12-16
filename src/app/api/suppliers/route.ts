@@ -1,12 +1,13 @@
 // app/api/suppliers/route.ts
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { Successes, Errors } from "@/lib/responses";
 import * as supplierService from "@/services/supplierService";
 
 export async function GET(req: Request) {
   try {
     const auth = await requireAuth();
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
+    if (!auth.authorized) return Errors.Unauthorized();
 
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -24,22 +25,25 @@ export async function GET(req: Request) {
 
     const result = await supplierService.getSuppliers(auth.user, { page, limit, sortBy, order, filters });
 
-    return NextResponse.json(result, { status: 200 });
+    return Successes.Ok(result);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return Errors.Internal();
   }
 }
 
 export async function POST(req: Request) {
   try {
     const auth = await requireAuth();
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
+    if (!auth.authorized) return Errors.Unauthorized();
 
     const body = await req.json();
     const newSupplier = await supplierService.createSupplier(auth.user, body);
 
-    return NextResponse.json({ success: true, data: newSupplier }, { status: 201 });
+    return Successes.Created(newSupplier);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error.message.includes('validation') || error.message.includes('required') || error.message.includes('invalid')) {
+      return Errors.Validation([{ message: error.message }]);
+    }
+    return Errors.Internal();
   }
 }

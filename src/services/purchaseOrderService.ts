@@ -1,5 +1,7 @@
 import {prisma} from "@/lib/prisma"
 import { generatePONumber } from "@/lib/utils" // similar to generateInvoiceNumber
+import { createFromPurchaseOrder } from "./financialRecordService"
+import { inventoryService } from "./inventoryService"
 
 interface PurchaseOrderFilters {
   page?: number
@@ -77,7 +79,7 @@ export const purchaseOrderService = {
   },
 
   async createPurchaseOrder(userId: number, data: any) {
-    const { supplierId, orderDate, expectedDeliveryDate, notes, items } = data
+    const { supplierId, orderDate, expectedDeliveryDate, notes, items, categoryId } = data
 
     // Calculate amounts
     const subtotal = items.reduce(
@@ -95,7 +97,7 @@ export const purchaseOrderService = {
 
     const poNumber = generatePONumber(lastPO?.poNumber)
 
-    return prisma.purchaseOrder.create({
+    const purchaseOrder = await prisma.purchaseOrder.create({
       data: {
         userId,
         supplierId,
@@ -122,6 +124,8 @@ export const purchaseOrderService = {
         items: true,
       },
     })
+
+    return purchaseOrder
   },
 
   async updatePurchaseOrder(id: number, userId: number, role: string, data: any) {
@@ -158,14 +162,41 @@ export const purchaseOrderService = {
     })
   },
 
-  async receivePurchaseOrder(id: number, userId: number, role: string) {
+  async receivePurchaseOrder(id: number, userId: number, role: string, categoryId?: number) {
     const po = await prisma.purchaseOrder.findUnique({ where: { id } })
     if (!po) return null
     if (role !== "ADMIN" && po.userId !== userId) return null
 
-    return prisma.purchaseOrder.update({
+    const updatedPO = await prisma.purchaseOrder.update({
       where: { id },
       data: { status: "RECEIVED", actualDeliveryDate: new Date() },
     })
+
+    // Automatically create financial record when PO is received
+    if (categoryId) {
+      try {
+        await createFromPurchaseOrder(id, userId, categoryId)
+      } catch (error) {
+        console.error("Failed to create financial record for purchase order:", error)
+        // Don't fail the PO receipt if financial record creation fails
+      }
+    }
+
+    // Automatically create inventory movements when PO is received
+    try {
+      const poWithItems = await prisma.purchaseOrder.findUnique({
+        where: { id },
+        include: { items: true }
+      })
+      
+      if (poWithItems?.items) {
+        await inventoryService.adjustFromPurchaseOrder(poWithItems.items, id, userId)
+      }
+    } catch (error) {
+      console.error("Failed to create inventory movements for purchase order:", error)
+      // Don't fail the PO receipt if inventory movements fail
+    }
+
+    return updatedPO
   },
 }

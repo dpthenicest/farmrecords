@@ -11,6 +11,7 @@ interface AnimalRecordFilters {
   animalId?: number
   startDate?: string
   endDate?: string
+  healthStatus?: string
 }
 
 // 📌 Fetch multiple animal records
@@ -34,6 +35,7 @@ export function useAnimalRecords(filters?: AnimalRecordFilters) {
       if (filters?.animalId) query.append("animalId", String(filters.animalId))
       if (filters?.startDate) query.append("startDate", filters.startDate)
       if (filters?.endDate) query.append("endDate", filters.endDate)
+      if (filters?.healthStatus) query.append("healthStatus", filters.healthStatus)
 
       const res = await fetch(`/api/animal-records?${query.toString()}`, { credentials: "include" })
       if (!res.ok) throw new Error("Failed to fetch animal records")

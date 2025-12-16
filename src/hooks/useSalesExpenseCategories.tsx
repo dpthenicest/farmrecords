@@ -6,7 +6,7 @@ import { isServer } from "@/utils/isServer"
 interface CategoryFilters {
   page?: number
   limit?: number
-  type?: "SALES" | "EXPENSE"
+  categoryType?: "SALES" | "EXPENSE"
   isActive?: boolean
   startDate?: string
   endDate?: string
@@ -27,7 +27,7 @@ export function useSalesExpenseCategories(filters?: CategoryFilters) {
       const query = new URLSearchParams()
       if (filters?.page) query.append("page", String(filters.page))
       if (filters?.limit) query.append("limit", String(filters.limit))
-      if (filters?.type) query.append("type", filters.type)
+      if (filters?.categoryType) query.append("type", filters.categoryType)
       if (filters?.isActive !== undefined) query.append("isActive", String(filters.isActive))
       if (filters?.startDate) query.append("startDate", filters.startDate)
       if (filters?.endDate) query.append("endDate", filters.endDate)

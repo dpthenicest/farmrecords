@@ -9,11 +9,18 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
 
     const body = await req.json();
+    
+    // Convert adjustment type to quantity change
+    let quantityChange = Number(body.quantity);
+    if (body.adjustmentType === "DECREASE") {
+      quantityChange = -quantityChange;
+    }
+    
     const data = await inventoryService.adjustQuantity(
       Number(params.id),
-      Number(body.quantity),
-      body.movementType,
-      body.notes,
+      quantityChange,
+      body.adjustmentType || "ADJUSTMENT",
+      body.notes || "",
       Number(auth.user?.id),
       auth.user?.role === "ADMIN"
     );

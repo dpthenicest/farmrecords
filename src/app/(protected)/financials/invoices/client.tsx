@@ -9,6 +9,7 @@ import { InvoiceFilters } from "./_components/InvoiceFilters"
 import { InvoiceDetails } from "./_components/InvoiceDetails"
 import { InvoiceForm } from "./_components/InvoiceForm"
 import { Modal } from "@/components/ui/modal"
+import { X } from "lucide-react"
 
 interface AppliedFilters {
   search: string
@@ -120,20 +121,41 @@ export default function InvoicesClient() {
           <InvoiceDetails invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
         )}
       </Modal>
-      <Modal
-        open={showForm}
-        onOpenChange={setShowForm}
-        title={selectedInvoice ? "Edit Invoice" : "Create Invoice"}
-      >
-        <InvoiceForm
-          invoice={selectedInvoice}
-          onClose={() => {
-            setSelectedInvoice(null)
-            setShowForm(false)
-          }}
-          onSaved={refetch}
-        />
-      </Modal>
+      {/* Large Modal for Invoice Form */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold">
+                {selectedInvoice ? "Edit Invoice" : "Create Invoice"}
+              </h2>
+              <button
+                onClick={() => {
+                  setSelectedInvoice(null)
+                  setShowForm(false)
+                }}
+                className="p-2 hover:bg-gray-100 rounded"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <InvoiceForm
+                invoice={selectedInvoice}
+                onClose={() => {
+                  setSelectedInvoice(null)
+                  setShowForm(false)
+                }}
+                onSaved={() => {
+                  refetch()
+                  setSelectedInvoice(null)
+                  setShowForm(false)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

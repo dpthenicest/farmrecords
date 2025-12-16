@@ -1,11 +1,12 @@
 // app/api/financial-records/route.ts
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { Successes, Errors } from "@/lib/responses";
 import { getFinancialRecords, createFinancialRecord } from "@/services/financialRecordService";
 
 export async function GET(req: Request) {
   const auth = await requireAuth();
-  if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
+  if (!auth.authorized) return Errors.Unauthorized();
 
   const { user } = auth;
 
@@ -32,17 +33,23 @@ export async function GET(req: Request) {
     transactionType
   });
 
-  return NextResponse.json({ success: true, data });
+  return Successes.Ok(data);
 }
 
 export async function POST(req: Request) {
   const auth = await requireAuth();
-  if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
+  if (!auth.authorized) return Errors.Unauthorized();
 
   const { user } = auth;
-  const body = await req.json();
 
-  const record = await createFinancialRecord(body, Number(user?.id));
-
-  return NextResponse.json({ success: true, data: record }, { status: 201 });
+  try {
+    const body = await req.json();
+    const record = await createFinancialRecord(body, Number(user?.id));
+    return Successes.Created(record);
+  } catch (err: any) {
+    if (err.message.includes('validation') || err.message.includes('required') || err.message.includes('invalid')) {
+      return Errors.Validation([{ message: err.message }]);
+    }
+    return Errors.Internal();
+  }
 }

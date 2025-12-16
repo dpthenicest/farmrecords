@@ -1,12 +1,28 @@
 // prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding comprehensive farm management database...");
 
-  // 1. Users - Create multiple user roles
+  // Hash the admin password
+  const adminPasswordHash = await bcrypt.hash("DP307&9As", 12);
+
+  // 1. Users - Create multiple user roles including admin
+  const admin = await prisma.user.create({
+    data: {
+      username: "admin_fortune",
+      email: "fortuneprecious17@gmail.com",
+      passwordHash: adminPasswordHash,
+      firstName: "Fortune",
+      lastName: "Precious",
+      role: "OWNER",
+      lastLogin: new Date(),
+    },
+  });
+
   const owner = await prisma.user.create({
     data: {
       username: "john_owner",
@@ -55,12 +71,24 @@ async function main() {
     },
   });
 
+  const worker2 = await prisma.user.create({
+    data: {
+      username: "james_worker",
+      email: "james@riversfarm.ng",
+      passwordHash: "$2b$12$hashed_password_worker2",
+      firstName: "James",
+      lastName: "Okafor",
+      role: "WORKER",
+      lastLogin: new Date("2024-09-01T14:30:00Z"),
+    },
+  });
+
   console.log("✅ Created users");
 
-  // 2. Sales & Expense Categories
+  // 2. Sales & Expense Categories - Create for admin user
   const fishSalesCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Fish Sales",
       categoryType: "SALES",
       description: "Revenue from selling fish (catfish, tilapia)",
@@ -69,7 +97,7 @@ async function main() {
 
   const eggSalesCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Egg Sales",
       categoryType: "SALES",
       description: "Revenue from selling chicken eggs",
@@ -78,7 +106,7 @@ async function main() {
 
   const chickenSalesCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Chicken Sales",
       categoryType: "SALES",
       description: "Revenue from selling broiler chickens",
@@ -87,16 +115,25 @@ async function main() {
 
   const goatSalesCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Goat Sales",
       categoryType: "SALES",
       description: "Revenue from selling goats and goat milk",
     },
   });
 
+  const pigSalesCategory = await prisma.salesExpenseCategory.create({
+    data: {
+      userId: admin.id,
+      categoryName: "Pig Sales",
+      categoryType: "SALES",
+      description: "Revenue from selling pigs and pork products",
+    },
+  });
+
   const fishFeedCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Fish Feed Expenses",
       categoryType: "EXPENSE",
       description: "Cost of fish feed and supplements",
@@ -105,7 +142,7 @@ async function main() {
 
   const chickenFeedCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Chicken Feed Expenses",
       categoryType: "EXPENSE",
       description: "Cost of chicken feed and supplements",
@@ -114,7 +151,7 @@ async function main() {
 
   const veterinaryCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Veterinary Expenses",
       categoryType: "EXPENSE",
       description: "Medical treatment and medications",
@@ -123,10 +160,28 @@ async function main() {
 
   const maintenanceCategory = await prisma.salesExpenseCategory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryName: "Equipment Maintenance",
       categoryType: "EXPENSE",
       description: "Repair and maintenance of farm equipment",
+    },
+  });
+
+  const laborCategory = await prisma.salesExpenseCategory.create({
+    data: {
+      userId: admin.id,
+      categoryName: "Labor Expenses",
+      categoryType: "EXPENSE",
+      description: "Wages and salaries for farm workers",
+    },
+  });
+
+  const utilitiesCategory = await prisma.salesExpenseCategory.create({
+    data: {
+      userId: admin.id,
+      categoryName: "Utilities",
+      categoryType: "EXPENSE",
+      description: "Electricity, water, and other utilities",
     },
   });
 
@@ -135,7 +190,7 @@ async function main() {
   // 3. Customers
   const goldenGateRestaurant = await prisma.customer.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerName: "Golden Gate Restaurant",
       customerCode: "CUST001",
       businessName: "Golden Gate Restaurant Ltd",
@@ -153,7 +208,7 @@ async function main() {
 
   const mile3Market = await prisma.customer.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerName: "Mile 3 Fish Market",
       customerCode: "CUST002",
       businessName: "Mile 3 Fish Market Vendors Association",
@@ -171,7 +226,7 @@ async function main() {
 
   const chickenRepublic = await prisma.customer.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerName: "Chicken Republic PH",
       customerCode: "CUST003",
       businessName: "Chicken Republic Port Harcourt",
@@ -189,7 +244,7 @@ async function main() {
 
   const chiefAmadi = await prisma.customer.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerName: "Chief Amadi",
       customerCode: "CUST004",
       businessName: "Private Individual",
@@ -205,12 +260,30 @@ async function main() {
     },
   });
 
+  const freshMartSupermarket = await prisma.customer.create({
+    data: {
+      userId: admin.id,
+      customerName: "FreshMart Supermarket",
+      customerCode: "CUST005",
+      businessName: "FreshMart Supermarket Chain",
+      contactPerson: "Mrs. Sarah Johnson",
+      email: "procurement@freshmart.ng",
+      phone: "+234-809-123-4567",
+      address: "Plot 23, GRA Phase 2, Port Harcourt",
+      customerType: "RETAIL",
+      creditLimit: 300000.00,
+      paymentTermsDays: 21,
+      paymentMethodPreference: "bank_transfer",
+      notes: "Weekly orders for fresh produce section",
+    },
+  });
+
   console.log("✅ Created customers");
 
   // 4. Suppliers
   const riversFeedMills = await prisma.supplier.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierName: "Rivers Feed Mills",
       supplierCode: "SUPP001",
       businessName: "Rivers Feed Mills Limited",
@@ -228,7 +301,7 @@ async function main() {
 
   const drEzeVet = await prisma.supplier.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierName: "Dr. Eze Veterinary Services",
       supplierCode: "SUPP002",
       businessName: "Dr. Eze Veterinary Clinic",
@@ -246,7 +319,7 @@ async function main() {
 
   const equipmentWorld = await prisma.supplier.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierName: "Equipment World Nigeria",
       supplierCode: "SUPP003",
       businessName: "Equipment World Nigeria Ltd",
@@ -264,7 +337,7 @@ async function main() {
 
   const fingerlingHatchery = await prisma.supplier.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierName: "Fingerling Hatchery Ltd",
       supplierCode: "SUPP004",
       businessName: "Fingerling Hatchery Limited",
@@ -280,12 +353,30 @@ async function main() {
     },
   });
 
+  const agriSupplyCompany = await prisma.supplier.create({
+    data: {
+      userId: admin.id,
+      supplierName: "Agri-Supply Company",
+      supplierCode: "SUPP005",
+      businessName: "Agri-Supply Company Limited",
+      contactPerson: "Mr. Daniel Okwu",
+      email: "sales@agrisupply.ng",
+      phone: "+234-803-777-8888",
+      address: "Aba Road Industrial Layout, Port Harcourt",
+      supplierType: "GENERAL",
+      paymentTermsDays: 30,
+      taxId: "TAX321654987",
+      rating: 4.3,
+      notes: "General farm supplies and tools",
+    },
+  });
+
   console.log("✅ Created suppliers");
 
   // 5. Inventory Items
   const catfishFeed = await prisma.inventory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: fishFeedCategory.id,
       itemName: "Catfish Feed 15% Protein",
       itemCode: "FEED001",
@@ -302,7 +393,7 @@ async function main() {
 
   const layerFeed = await prisma.inventory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: chickenFeedCategory.id,
       itemName: "Layer Feed 16% Protein",
       itemCode: "FEED002",
@@ -319,7 +410,7 @@ async function main() {
 
   const broilerFeed = await prisma.inventory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: chickenFeedCategory.id,
       itemName: "Broiler Starter Feed",
       itemCode: "FEED003",
@@ -336,7 +427,7 @@ async function main() {
 
   const multivitamins = await prisma.inventory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: veterinaryCategory.id,
       itemName: "Multivitamin Supplement",
       itemCode: "MED001",
@@ -353,7 +444,7 @@ async function main() {
 
   const freshEggs = await prisma.inventory.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: eggSalesCategory.id,
       itemName: "Fresh Eggs Grade A",
       itemCode: "EGG001",
@@ -368,12 +459,63 @@ async function main() {
     },
   });
 
+  const pigFeed = await prisma.inventory.create({
+    data: {
+      userId: admin.id,
+      categoryId: pigSalesCategory.id,
+      itemName: "Pig Grower Feed",
+      itemCode: "FEED004",
+      description: "Complete feed for growing pigs",
+      unitOfMeasure: "kg",
+      currentQuantity: 120.00,
+      reorderLevel: 250.00,
+      unitCost: 170.00,
+      sellingPrice: 210.00,
+      location: "Feed Store",
+      expiryDate: new Date("2025-03-15"),
+    },
+  });
+
+  const antibiotics = await prisma.inventory.create({
+    data: {
+      userId: admin.id,
+      categoryId: veterinaryCategory.id,
+      itemName: "Broad Spectrum Antibiotics",
+      itemCode: "MED002",
+      description: "Injectable antibiotics for livestock",
+      unitOfMeasure: "vial",
+      currentQuantity: 8.00,
+      reorderLevel: 15.00,
+      unitCost: 3500.00,
+      sellingPrice: 4200.00,
+      location: "Medicine Cabinet",
+      expiryDate: new Date("2025-12-31"),
+    },
+  });
+
+  const disinfectant = await prisma.inventory.create({
+    data: {
+      userId: admin.id,
+      categoryId: veterinaryCategory.id,
+      itemName: "Farm Disinfectant",
+      itemCode: "CLEAN001",
+      description: "Multi-purpose farm disinfectant",
+      unitOfMeasure: "liter",
+      currentQuantity: 25.00,
+      reorderLevel: 40.00,
+      unitCost: 850.00,
+      sellingPrice: 1100.00,
+      location: "Chemical Store",
+      expiryDate: new Date("2026-08-30"),
+    },
+  });
+
   console.log("✅ Created inventory items");
 
   // 6. Assets
   const fishPond1 = await prisma.asset.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: fishSalesCategory.id,
       assetName: "Fish Pond 1",
       assetCode: "POND001",
@@ -393,7 +535,7 @@ async function main() {
 
   const chickenCoopA = await prisma.asset.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: eggSalesCategory.id,
       assetName: "Chicken Coop A",
       assetCode: "COOP001",
@@ -413,7 +555,7 @@ async function main() {
 
   const goatPenComplex = await prisma.asset.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: goatSalesCategory.id,
       assetName: "Goat Pen Complex",
       assetCode: "PEN001",
@@ -433,7 +575,7 @@ async function main() {
 
   const cameraSystem = await prisma.asset.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: maintenanceCategory.id,
       assetName: "Security Camera System",
       assetCode: "CAM001",
@@ -453,7 +595,7 @@ async function main() {
 
   const waterPump = await prisma.asset.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: maintenanceCategory.id,
       assetName: "Water Pump System",
       assetCode: "PUMP001",
@@ -471,12 +613,52 @@ async function main() {
     },
   });
 
+  const pigPenComplex = await prisma.asset.create({
+    data: {
+      userId: admin.id,
+      categoryId: pigSalesCategory.id,
+      assetName: "Pig Pen Complex",
+      assetCode: "PIG001",
+      description: "Modern pig housing with 6 pens",
+      assetType: "INFRASTRUCTURE",
+      purchaseCost: 1500000.00,
+      purchaseDate: new Date("2024-02-10"),
+      salvageValue: 120000.00,
+      usefulLifeYears: 15,
+      depreciationRate: 6.67,
+      conditionStatus: "excellent",
+      location: "South section of farm",
+      warrantyInfo: "No warranty",
+      insuranceInfo: "Covered under farm insurance",
+    },
+  });
+
+  const tractorEquipment = await prisma.asset.create({
+    data: {
+      userId: admin.id,
+      categoryId: maintenanceCategory.id,
+      assetName: "Farm Tractor",
+      assetCode: "TRAC001",
+      description: "75HP farm tractor with implements",
+      assetType: "VEHICLES",
+      purchaseCost: 8500000.00,
+      purchaseDate: new Date("2023-05-20"),
+      salvageValue: 1500000.00,
+      usefulLifeYears: 12,
+      depreciationRate: 8.33,
+      conditionStatus: "good",
+      location: "Equipment shed",
+      warrantyInfo: "3 year warranty",
+      insuranceInfo: "Comprehensive vehicle insurance",
+    },
+  });
+
   console.log("✅ Created assets");
 
   // 7. Animal Batches
   const catfishBatch1 = await prisma.animalBatch.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: fishSalesCategory.id,
       batchCode: "BATCH001",
       species: "fish",
@@ -494,7 +676,7 @@ async function main() {
 
   const broilerBatch1 = await prisma.animalBatch.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: chickenSalesCategory.id,
       batchCode: "BATCH002",
       species: "chicken",
@@ -512,7 +694,7 @@ async function main() {
 
   const layerBatch1 = await prisma.animalBatch.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: eggSalesCategory.id,
       batchCode: "BATCH003",
       species: "chicken",
@@ -530,7 +712,7 @@ async function main() {
 
   const goatBatch1 = await prisma.animalBatch.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       categoryId: goatSalesCategory.id,
       batchCode: "BATCH004",
       species: "goat",
@@ -546,12 +728,48 @@ async function main() {
     },
   });
 
+  const pigBatch1 = await prisma.animalBatch.create({
+    data: {
+      userId: admin.id,
+      categoryId: pigSalesCategory.id,
+      batchCode: "BATCH005",
+      species: "pig",
+      breed: "large_white",
+      initialQuantity: 15,
+      currentQuantity: 15,
+      batchStartDate: new Date("2024-04-01"),
+      totalCost: 750000.00,
+      averageWeight: 85.0,
+      batchStatus: "GROWING",
+      location: "Pig Pen Complex",
+      notes: "Fast-growing pigs, 5 months old",
+    },
+  });
+
+  const tilapiaBatch1 = await prisma.animalBatch.create({
+    data: {
+      userId: admin.id,
+      categoryId: fishSalesCategory.id,
+      batchCode: "BATCH006",
+      species: "fish",
+      breed: "tilapia",
+      initialQuantity: 1500,
+      currentQuantity: 1420,
+      batchStartDate: new Date("2024-05-15"),
+      totalCost: 300000.00,
+      averageWeight: 0.18,
+      batchStatus: "GROWING",
+      location: "Pond 2",
+      notes: "Tilapia fingerlings, 4 months old",
+    },
+  });
+
   console.log("✅ Created animal batches");
 
   // 8. Individual Animals
   const catfish1 = await prisma.animal.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: catfishBatch1.id,
       animalTag: "FISH001",
       species: "fish",
@@ -569,7 +787,7 @@ async function main() {
 
   const broiler1 = await prisma.animal.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: broilerBatch1.id,
       animalTag: "BROILER001",
       species: "chicken",
@@ -587,7 +805,7 @@ async function main() {
 
   const layer1 = await prisma.animal.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: layerBatch1.id,
       animalTag: "LAYER001",
       species: "chicken",
@@ -605,7 +823,7 @@ async function main() {
 
   const goat1 = await prisma.animal.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: goatBatch1.id,
       animalTag: "GOAT001",
       species: "goat",
@@ -623,7 +841,7 @@ async function main() {
 
   const goat2 = await prisma.animal.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: goatBatch1.id,
       animalTag: "GOAT002",
       species: "goat",
@@ -639,12 +857,48 @@ async function main() {
     },
   });
 
+  const pig1 = await prisma.animal.create({
+    data: {
+      userId: admin.id,
+      batchId: pigBatch1.id,
+      animalTag: "PIG001",
+      species: "pig",
+      breed: "large_white",
+      gender: "female",
+      birthDate: new Date("2024-04-01"),
+      purchaseWeight: 15.0,
+      currentWeight: 88.0,
+      purchaseCost: 50000.00,
+      healthStatus: "healthy",
+      lastHealthCheck: new Date("2024-09-01"),
+      notes: "Good growth rate, potential breeder",
+    },
+  });
+
+  const pig2 = await prisma.animal.create({
+    data: {
+      userId: admin.id,
+      batchId: pigBatch1.id,
+      animalTag: "PIG002",
+      species: "pig",
+      breed: "large_white",
+      gender: "male",
+      birthDate: new Date("2024-04-01"),
+      purchaseWeight: 16.0,
+      currentWeight: 92.0,
+      purchaseCost: 50000.00,
+      healthStatus: "healthy",
+      lastHealthCheck: new Date("2024-09-01"),
+      notes: "Excellent growth, ready for market soon",
+    },
+  });
+
   console.log("✅ Created individual animals");
 
   // 9. Animal Records
   const feedingRecord1 = await prisma.animalRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       animalId: catfish1.id,
       batchId: catfishBatch1.id,
       recordType: "FEEDING",
@@ -660,7 +914,7 @@ async function main() {
 
   const weighingRecord1 = await prisma.animalRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       animalId: broiler1.id,
       batchId: broilerBatch1.id,
       recordType: "WEIGHING",
@@ -676,7 +930,7 @@ async function main() {
 
   const productionRecord1 = await prisma.animalRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       animalId: layer1.id,
       batchId: layerBatch1.id,
       recordType: "PRODUCTION",
@@ -693,7 +947,7 @@ async function main() {
 
   const healthRecord1 = await prisma.animalRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       animalId: goat1.id,
       batchId: goatBatch1.id,
       recordType: "HEALTH_CHECK",
@@ -710,7 +964,7 @@ async function main() {
 
   const mortalityRecord1 = await prisma.animalRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       batchId: catfishBatch1.id,
       recordType: "MORTALITY",
       recordDate: new Date("2024-08-15"),
@@ -727,7 +981,7 @@ async function main() {
   // 10. Purchase Orders
   const po1 = await prisma.purchaseOrder.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierId: riversFeedMills.id,
       poNumber: "PO2024001",
       orderDate: new Date("2024-08-25"),
@@ -743,7 +997,7 @@ async function main() {
 
   const po2 = await prisma.purchaseOrder.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierId: fingerlingHatchery.id,
       poNumber: "PO2024002",
       orderDate: new Date("2024-07-10"),
@@ -759,7 +1013,7 @@ async function main() {
 
   const po3 = await prisma.purchaseOrder.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       supplierId: drEzeVet.id,
       poNumber: "PO2024003",
       orderDate: new Date("2024-09-01"),
@@ -817,7 +1071,7 @@ async function main() {
   // 12. Invoices
   const invoice1 = await prisma.invoice.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerId: goldenGateRestaurant.id,
       invoiceNumber: "INV2024001",
       invoiceDate: new Date("2024-08-30"),
@@ -832,7 +1086,7 @@ async function main() {
 
   const invoice2 = await prisma.invoice.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerId: chickenRepublic.id,
       invoiceNumber: "INV2024002",
       invoiceDate: new Date("2024-09-01"),
@@ -849,7 +1103,7 @@ async function main() {
 
   const invoice3 = await prisma.invoice.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       customerId: mile3Market.id,
       invoiceNumber: "INV2024003",
       invoiceDate: new Date("2024-09-02"),
@@ -904,7 +1158,7 @@ async function main() {
   // 14. Financial Records
   await prisma.financialRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       transactionType: "INCOME",
       amount: 237600.00,
       categoryId: fishSalesCategory.id,
@@ -918,7 +1172,7 @@ async function main() {
 
   await prisma.financialRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       transactionType: "INCOME",
       amount: 71280.00,
       categoryId: eggSalesCategory.id,
@@ -932,7 +1186,7 @@ async function main() {
 
   await prisma.financialRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       transactionType: "EXPENSE",
       amount: 194400.00,
       categoryId: fishFeedCategory.id,
@@ -946,7 +1200,7 @@ async function main() {
 
   await prisma.financialRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       transactionType: "EXPENSE",
       amount: 86400.00,
       categoryId: fishSalesCategory.id,
@@ -960,7 +1214,7 @@ async function main() {
 
   await prisma.financialRecord.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       transactionType: "EXPENSE",
       amount: 15000.00,
       categoryId: maintenanceCategory.id,
@@ -977,7 +1231,7 @@ async function main() {
   await prisma.inventoryMovement.create({
     data: {
       inventoryId: catfishFeed.id,
-      userId: owner.id,
+      userId: admin.id,
       movementType: "PURCHASE",
       quantity: 1000.00,
       unitCost: 180.00,
@@ -991,7 +1245,7 @@ async function main() {
   await prisma.inventoryMovement.create({
     data: {
       inventoryId: freshEggs.id,
-      userId: owner.id,
+      userId: admin.id,
       movementType: "PRODUCTION",
       quantity: 280.00,
       unitCost: 180.00,
@@ -1005,7 +1259,7 @@ async function main() {
   await prisma.inventoryMovement.create({
     data: {
       inventoryId: catfishFeed.id,
-      userId: owner.id,
+      userId: admin.id,
       movementType: "CONSUMPTION",
       quantity: 150.00,
       unitCost: 180.00,
@@ -1019,7 +1273,7 @@ async function main() {
   await prisma.inventoryMovement.create({
     data: {
       inventoryId: freshEggs.id,
-      userId: owner.id,
+      userId: admin.id,
       movementType: "SALE",
       quantity: 300.00,
       unitCost: 180.00,
@@ -1036,7 +1290,7 @@ async function main() {
   await prisma.assetMaintenance.create({
     data: {
       assetId: waterPump.id,
-      userId: owner.id,
+      userId: admin.id,
       maintenanceType: "REPAIR",
       scheduledDate: new Date("2024-08-20"),
       completedDate: new Date("2024-08-20"),
@@ -1051,7 +1305,7 @@ async function main() {
   await prisma.assetMaintenance.create({
     data: {
       assetId: cameraSystem.id,
-      userId: owner.id,
+      userId: admin.id,
       maintenanceType: "MAINTENANCE",
       scheduledDate: new Date("2024-09-15"),
       cost: 0.00,
@@ -1079,7 +1333,7 @@ async function main() {
   // 17. Tasks
   await prisma.task.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       assignedTo: worker.id,
       taskTitle: "Daily Fish Feeding - Pond 1",
       description: "Feed catfish in pond 1, monitor behavior and water quality",
@@ -1094,7 +1348,7 @@ async function main() {
 
   await prisma.task.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       assignedTo: worker.id,
       taskTitle: "Collect Eggs from Coop A",
       description: "Morning egg collection from layer chickens",
@@ -1109,8 +1363,8 @@ async function main() {
 
   await prisma.task.create({
     data: {
-      userId: owner.id,
-      assignedTo: owner.id,
+      userId: admin.id,
+      assignedTo: admin.id,
       taskTitle: "Check Pregnant Goats",
       description: "Monitor pregnant does for signs of labor",
       priority: "MEDIUM",
@@ -1123,7 +1377,7 @@ async function main() {
 
   await prisma.task.create({
     data: {
-      userId: owner.id,
+      userId: admin.id,
       assignedTo: worker.id,
       taskTitle: "Clean Water Troughs",
       description: "Clean and refill water containers in goat pen",
@@ -1137,8 +1391,8 @@ async function main() {
 
   await prisma.task.create({
     data: {
-      userId: owner.id,
-      assignedTo: owner.id,
+      userId: admin.id,
+      assignedTo: admin.id,
       taskTitle: "Service Camera System",
       description: "Quarterly maintenance check on CCTV system",
       priority: "LOW",
@@ -1155,14 +1409,14 @@ async function main() {
 🎉 Database seeding completed successfully!
 
 Summary of seeded data:
-- 4 Users (Owner, Accountant, Manager, Worker)
-- 8 Sales & Expense Categories
-- 4 Customers (Restaurant, Market, Chain, Individual)
-- 4 Suppliers (Feed, Veterinary, Equipment, Fingerlings)
-- 5 Inventory Items (Feeds, Medicine, Eggs)
-- 5 Assets (Pond, Coops, Pen, Camera, Pump)
-- 4 Animal Batches (Catfish, Broiler, Layer, Goats)
-- 5 Individual Animals
+- 6 Users (Admin, Owner, Accountant, Manager, 2 Workers)
+- 11 Sales & Expense Categories
+- 5 Customers (Restaurant, Market, Chain, Individual, Supermarket)
+- 5 Suppliers (Feed, Veterinary, Equipment, Fingerlings, General)
+- 8 Inventory Items (Feeds, Medicine, Eggs, Disinfectant)
+- 7 Assets (Ponds, Coops, Pens, Camera, Pump, Tractor)
+- 6 Animal Batches (Catfish, Broiler, Layer, Goats, Pigs, Tilapia)
+- 7 Individual Animals
 - 5 Animal Records (Feeding, Weighing, Production, Health, Mortality)
 - 3 Purchase Orders with Items
 - 3 Invoices with Items
@@ -1172,13 +1426,15 @@ Summary of seeded data:
 - 5 Tasks
 
 The farm now has realistic operational data for:
-🐟 Fish farming (catfish in pond)
+🐟 Fish farming (catfish and tilapia in ponds)
 🐔 Chicken operations (layers for eggs, broilers for meat)
 🐐 Goat farming (breeding stock)
-💰 Complete financial tracking
-📦 Inventory management
-🔧 Asset maintenance
+� Pigp farming (growing pigs)
+� Covmplete financial tracking
+�  Inventory management
+�  Asset maintenance
 📋 Task management
+👤 Admin user: fortuneprecious17@gmail.com / DP307&9As
 
 Ready for testing the comprehensive farm management system!
   `);

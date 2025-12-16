@@ -39,6 +39,42 @@ export const dashboardService = {
       where: { ...whereUser, status: "PENDING" },
     });
 
+    // Overdue Tasks
+    const overdueTasks = await prisma.task.count({
+      where: { 
+        ...whereUser, 
+        status: "PENDING",
+        dueDate: { lt: new Date() }
+      },
+    });
+
+    // Upcoming Maintenance (next 30 days)
+    const upcomingMaintenance = await prisma.assetMaintenance.count({
+      where: {
+        ...whereUser,
+        status: "SCHEDULED",
+        scheduledDate: {
+          gte: new Date(),
+          lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        }
+      },
+    });
+
+    // Overdue Maintenance
+    const overdueMaintenance = await prisma.assetMaintenance.count({
+      where: {
+        ...whereUser,
+        status: "SCHEDULED",
+        scheduledDate: { lt: new Date() }
+      },
+    });
+
+    // Total Assets Value
+    const totalAssetsValue = await prisma.asset.aggregate({
+      _sum: { currentValue: true },
+      where: { ...whereUser, status: "ACTIVE" },
+    });
+
     // Recent Transactions (last 7 days)
     const recentTransactions = await prisma.financialRecord.findMany({
       where: { ...whereUser },
@@ -63,6 +99,10 @@ export const dashboardService = {
       lowStockItems,
       activeBatches,
       pendingTasks,
+      overdueTasks,
+      upcomingMaintenance,
+      overdueMaintenance,
+      totalAssetsValue: totalAssetsValue._sum.currentValue?.toFixed(2) || "0.00",
       recentTransactions: recentTransactions.map((t) => ({
         id: t.id,
         type: t.transactionType,
@@ -175,5 +215,289 @@ export const dashboardService = {
     productionEfficiency,
     topProducts,
   };
-}
+},
+
+  async getComprehensiveAlerts(userId?: number, scope: "OWNER" | "ADMIN" = "OWNER") {
+    const whereUser = scope === "OWNER" ? { userId } : {};
+
+    // Low Stock Items
+    const lowStockItems = await prisma.inventory.findMany({
+      where: {
+        ...whereUser,
+        currentQuantity: { lte: prisma.inventory.fields.reorderLevel },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        itemName: true,
+        currentQuantity: true,
+        reorderLevel: true,
+        unitOfMeasure: true,
+      },
+      take: 10,
+    });
+
+    // Overdue Maintenance
+    const overdueMaintenance = await prisma.assetMaintenance.findMany({
+      where: {
+        ...whereUser,
+        status: "SCHEDULED",
+        scheduledDate: { lt: new Date() }
+      },
+      include: {
+        asset: {
+          select: {
+            assetName: true,
+            assetTag: true,
+          }
+        }
+      },
+      take: 10,
+    });
+
+    // Upcoming Maintenance (next 7 days)
+    const upcomingMaintenance = await prisma.assetMaintenance.findMany({
+      where: {
+        ...whereUser,
+        status: "SCHEDULED",
+        scheduledDate: {
+          gte: new Date(),
+          lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      },
+      include: {
+        asset: {
+          select: {
+            assetName: true,
+            assetTag: true,
+          }
+        }
+      },
+      take: 10,
+    });
+
+    // Overdue Tasks
+    const overdueTasks = await prisma.task.findMany({
+      where: {
+        ...whereUser,
+        status: "PENDING",
+        dueDate: { lt: new Date() }
+      },
+      select: {
+        id: true,
+        taskTitle: true,
+        dueDate: true,
+        priority: true,
+      },
+      take: 10,
+    });
+
+    // High Priority Pending Tasks
+    const highPriorityTasks = await prisma.task.findMany({
+      where: {
+        ...whereUser,
+        status: "PENDING",
+        priority: { in: ["HIGH", "URGENT"] }
+      },
+      select: {
+        id: true,
+        taskTitle: true,
+        dueDate: true,
+        priority: true,
+      },
+      take: 10,
+    });
+
+    // Outstanding Invoices (overdue)
+    const overdueInvoices = await prisma.invoice.findMany({
+      where: {
+        ...whereUser,
+        status: "OVERDUE"
+      },
+      include: {
+        customer: {
+          select: {
+            customerName: true,
+          }
+        }
+      },
+      take: 10,
+    });
+
+    return {
+      lowStockItems: lowStockItems.map(item => ({
+        id: item.id,
+        itemName: item.itemName,
+        currentQuantity: Number(item.currentQuantity),
+        reorderLevel: Number(item.reorderLevel),
+        unitOfMeasure: item.unitOfMeasure,
+        severity: Number(item.currentQuantity) === 0 ? 'critical' : 'warning'
+      })),
+      overdueMaintenance: overdueMaintenance.map(maintenance => ({
+        id: maintenance.id,
+        assetName: maintenance.asset.assetName,
+        assetTag: maintenance.asset.assetTag,
+        maintenanceType: maintenance.maintenanceType,
+        scheduledDate: maintenance.scheduledDate.toISOString().split('T')[0],
+        daysOverdue: Math.floor((Date.now() - maintenance.scheduledDate.getTime()) / (1000 * 60 * 60 * 24))
+      })),
+      upcomingMaintenance: upcomingMaintenance.map(maintenance => ({
+        id: maintenance.id,
+        assetName: maintenance.asset.assetName,
+        assetTag: maintenance.asset.assetTag,
+        maintenanceType: maintenance.maintenanceType,
+        scheduledDate: maintenance.scheduledDate.toISOString().split('T')[0],
+        daysUntilDue: Math.floor((maintenance.scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      })),
+      overdueTasks: overdueTasks.map(task => ({
+        id: task.id,
+        taskTitle: task.taskTitle,
+        dueDate: task.dueDate?.toISOString().split('T')[0],
+        priority: task.priority,
+        daysOverdue: task.dueDate ? Math.floor((Date.now() - task.dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0
+      })),
+      highPriorityTasks: highPriorityTasks.map(task => ({
+        id: task.id,
+        taskTitle: task.taskTitle,
+        dueDate: task.dueDate?.toISOString().split('T')[0],
+        priority: task.priority
+      })),
+      overdueInvoices: overdueInvoices.map(invoice => ({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customer?.customerName,
+        totalAmount: invoice.totalAmount.toFixed(2),
+        dueDate: invoice.dueDate?.toISOString().split('T')[0],
+        daysOverdue: invoice.dueDate ? Math.floor((Date.now() - invoice.dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0
+      }))
+    };
+  },
+
+  async getPerformanceReports(userId?: number, scope: "OWNER" | "ADMIN" = "OWNER") {
+    const whereUser = scope === "OWNER" ? { userId } : {};
+
+    // Financial Performance (last 12 months)
+    const monthlyFinancials = await prisma.financialRecord.groupBy({
+      by: ['transactionType'],
+      where: {
+        ...whereUser,
+        transactionDate: {
+          gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+        }
+      },
+      _sum: {
+        amount: true
+      }
+    });
+
+    // Animal Performance Metrics
+    const animalPerformance = await prisma.animalRecord.groupBy({
+      by: ['recordType'],
+      where: {
+        ...whereUser,
+        recordDate: {
+          gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        }
+      },
+      _sum: {
+        productionOutput: true
+      },
+      _avg: {
+        productionOutput: true
+      }
+    });
+
+    // Asset Utilization
+    const assetUtilization = await prisma.asset.findMany({
+      where: {
+        ...whereUser,
+        status: "ACTIVE"
+      },
+      include: {
+        _count: {
+          select: {
+            maintenance: {
+              where: {
+                status: "COMPLETED",
+                completedDate: {
+                  gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+                }
+              }
+            }
+          }
+        }
+      },
+      take: 10
+    });
+
+    // Inventory Turnover (top moving items)
+    const inventoryMovements = await prisma.inventoryMovement.groupBy({
+      by: ['inventoryId'],
+      where: {
+        ...whereUser,
+        movementDate: {
+          gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        }
+      },
+      _sum: {
+        quantity: true
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc'
+        }
+      },
+      take: 10
+    });
+
+    // Get inventory details for top moving items
+    const topMovingInventory = await prisma.inventory.findMany({
+      where: {
+        id: {
+          in: inventoryMovements.map(m => m.inventoryId)
+        }
+      },
+      select: {
+        id: true,
+        itemName: true,
+        currentQuantity: true,
+        unitOfMeasure: true
+      }
+    });
+
+    const revenue = monthlyFinancials.find(f => f.transactionType === 'INCOME')?._sum.amount || 0;
+    const expenses = monthlyFinancials.find(f => f.transactionType === 'EXPENSE')?._sum.amount || 0;
+
+    return {
+      financialSummary: {
+        totalRevenue: Number(revenue).toFixed(2),
+        totalExpenses: Number(expenses).toFixed(2),
+        netProfit: (Number(revenue) - Number(expenses)).toFixed(2),
+        profitMargin: revenue > 0 ? (((Number(revenue) - Number(expenses)) / Number(revenue)) * 100).toFixed(1) : '0.0'
+      },
+      animalPerformance: animalPerformance.map(perf => ({
+        recordType: perf.recordType,
+        totalOutput: Number(perf._sum.productionOutput || 0),
+        averageOutput: Number(perf._avg.productionOutput || 0).toFixed(2)
+      })),
+      assetUtilization: assetUtilization.map(asset => ({
+        id: asset.id,
+        assetName: asset.assetName,
+        assetTag: asset.assetTag,
+        currentValue: asset.currentValue.toFixed(2),
+        maintenanceCount: asset._count.maintenance,
+        utilizationScore: asset._count.maintenance > 0 ? 'High' : 'Low'
+      })),
+      topMovingInventory: topMovingInventory.map(item => {
+        const movement = inventoryMovements.find(m => m.inventoryId === item.id);
+        return {
+          id: item.id,
+          itemName: item.itemName,
+          currentQuantity: Number(item.currentQuantity),
+          unitOfMeasure: item.unitOfMeasure,
+          totalMovement: Number(movement?._sum.quantity || 0)
+        };
+      })
+    };
+  }
 };

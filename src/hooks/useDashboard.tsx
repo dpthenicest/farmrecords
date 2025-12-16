@@ -151,3 +151,119 @@ export function useDashboardAlerts() {
 
   return { data, loading, error }
 }
+
+// Comprehensive Alerts (includes maintenance notifications)
+export function useComprehensiveAlerts() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    if (isServer()) return
+
+    let isMounted = true
+    setLoading(true)
+
+    fetch("/api/dashboard/comprehensive-alerts", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch comprehensive alerts")
+        return res.json()
+      })
+      .then((json) => isMounted && setData(json))
+      .catch((err) => isMounted && setError(err))
+      .finally(() => isMounted && setLoading(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { data, loading, error }
+}
+
+// Performance Reports
+export function usePerformanceReports() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    if (isServer()) return
+
+    let isMounted = true
+    setLoading(true)
+
+    fetch("/api/dashboard/performance-reports", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch performance reports")
+        return res.json()
+      })
+      .then((json) => isMounted && setData(json))
+      .catch((err) => isMounted && setError(err))
+      .finally(() => isMounted && setLoading(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { data, loading, error }
+}
+
+// Financial Summary
+export function useFinancialSummary() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    if (isServer()) return
+
+    let isMounted = true
+    setLoading(true)
+
+    fetch("/api/dashboard/financial-summary", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch financial summary")
+        return res.json()
+      })
+      .then((json) => isMounted && setData(json))
+      .catch((err) => isMounted && setError(err))
+      .finally(() => isMounted && setLoading(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { data, loading, error }
+}
+
+// Production Metrics
+export function useProductionMetrics() {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    if (isServer()) return
+
+    let isMounted = true
+    setLoading(true)
+
+    fetch("/api/dashboard/production-metrics", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch production metrics")
+        return res.json()
+      })
+      .then((json) => isMounted && setData(json))
+      .catch((err) => isMounted && setError(err))
+      .finally(() => isMounted && setLoading(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { data, loading, error }
+}

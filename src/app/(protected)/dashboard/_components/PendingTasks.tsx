@@ -45,7 +45,7 @@ export function PendingTasks() {
     )
   }
 
-  const tasks = data?.data || []
+  const tasks = data?.data?.data || []
 
   if (tasks.length === 0) {
     return (

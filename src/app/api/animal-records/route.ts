@@ -28,6 +28,7 @@ export async function GET(req: Request) {
       animalId: searchParams.get("animalId")
         ? Number(searchParams.get("animalId"))
         : undefined,
+      healthStatus: searchParams.get("healthStatus") || undefined,
     };
 
     const result = await getAnimalRecords(auth.user, options);

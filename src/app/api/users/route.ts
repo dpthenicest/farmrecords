@@ -2,15 +2,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { userService } from "@/services/userService"
 import { requireRole } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireRole(["ADMIN"])
     if (!auth.authorized) {
-      return NextResponse.json(
-        { success: false, error: auth.error },
-        { status: 403 }
-      )
+      return Errors.Forbidden()
     }
 
     const { searchParams } = new URL(req.url)
@@ -29,12 +27,9 @@ export async function GET(req: NextRequest) {
     }
 
     const result = await userService.getUsers(params)
-    return NextResponse.json({ success: true, data: result })
+    return Successes.Ok(result)
   } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 500 }
-    )
+    return Errors.Internal()
   }
 }
 
@@ -42,19 +37,17 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireRole(["ADMIN"])
     if (!auth.authorized) {
-      return NextResponse.json(
-        { success: false, error: auth.error },
-        { status: 403 }
-      )
+      return Errors.Forbidden()
     }
 
     const body = await req.json()
     const user = await userService.createUser(body)
-    return NextResponse.json({ success: true, data: user }, { status: 201 })
+    return Successes.Created(user)
   } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message },
-      { status: 400 }
-    )
+    // Check if it's a validation error
+    if (err.message.includes('validation') || err.message.includes('required') || err.message.includes('invalid')) {
+      return Errors.Validation([{ message: err.message }])
+    }
+    return Errors.Internal()
   }
 }
