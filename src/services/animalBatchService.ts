@@ -20,7 +20,7 @@ export async function getAnimalBatches(userId: number | null, role: string, filt
   const skip = (page - 1) * limit
 
   const where: any = {}
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.userId = userId
   }
 
@@ -56,7 +56,7 @@ export async function getAnimalBatches(userId: number | null, role: string, filt
 
 export async function getAnimalBatchById(id: number, userId: number, role: string) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
   return prisma.animalBatch.findFirst({ where })
 }
 
@@ -73,7 +73,7 @@ export async function createAnimalBatch(userId: number, data: any) {
 
 export async function updateAnimalBatch(id: number, userId: number, role: string, data: any) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   return prisma.animalBatch.updateMany({
     where,
@@ -83,13 +83,13 @@ export async function updateAnimalBatch(id: number, userId: number, role: string
 
 export async function deleteAnimalBatch(id: number, userId: number, role: string) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
   return prisma.animalBatch.deleteMany({ where })
 }
 
 export async function getBatchPerformance(id: number, userId: number, role: string) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   const batch = await prisma.animalBatch.findFirst({
     where,

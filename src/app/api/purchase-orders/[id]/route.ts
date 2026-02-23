@@ -1,30 +1,31 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 import { purchaseOrderService } from "@/services/purchaseOrderService"
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const order = await purchaseOrderService.getPurchaseOrderById(
       Number(params.id),
       Number(auth.user?.id),
       auth.user?.role
     )
-    if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (!order) return Errors.NotFound()
 
-    return NextResponse.json(order)
+    return Successes.Ok(order)
   } catch (error) {
     console.error("Error fetching purchase order:", error)
-    return NextResponse.json({ error: "Failed to fetch purchase order" }, { status: 500 })
+    return Errors.Internal()
   }
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAuth()
-   if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const body = await req.json()
     const updated = await purchaseOrderService.updatePurchaseOrder(
@@ -34,18 +35,21 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       body
     )
 
-    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    return NextResponse.json(updated)
-  } catch (error) {
+    if (!updated) return Errors.NotFound()
+    return Successes.Ok(updated)
+  } catch (error: any) {
     console.error("Error updating purchase order:", error)
-    return NextResponse.json({ error: "Failed to update purchase order" }, { status: 500 })
+    if (error.message.includes('validation') || error.message.includes('required') || error.message.includes('invalid')) {
+      return Errors.Validation([{ message: error.message }])
+    }
+    return Errors.Internal()
   }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const deleted = await purchaseOrderService.deletePurchaseOrder(
       Number(params.id),
@@ -53,10 +57,10 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
       auth.user?.role
     )
 
-    if (!deleted) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    return NextResponse.json({ success: true })
+    if (!deleted) return Errors.NotFound()
+    return Successes.Ok({ success: true })
   } catch (error) {
     console.error("Error deleting purchase order:", error)
-    return NextResponse.json({ error: "Failed to delete purchase order" }, { status: 500 })
+    return Errors.Internal()
   }
 }

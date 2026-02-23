@@ -38,8 +38,8 @@ export function useInvoices(filters?: InvoiceFilters) {
       if (!res.ok) throw new Error("Failed to fetch invoices")
 
       const json = await res.json()
-      setInvoices(json.data || json.data?.invoices || [])
-      setTotalPages(json.pagination?.pages || 1)
+      setInvoices(json.data?.data || [])
+      setTotalPages(json.data?.pagination?.pages || 1)
     } catch (err: any) {
       setError(err)
     } finally {

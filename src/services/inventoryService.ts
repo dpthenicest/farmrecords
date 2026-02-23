@@ -198,9 +198,23 @@ export const inventoryService = {
   },
 
   async update(id: number, data: any, userId: number, isAdmin: boolean) {
+    const updateData = {
+      categoryId: data.categoryId ?? null,
+      itemName: data.itemName,
+      itemCode: data.itemCode,
+      description: data.description ?? null,
+      unitOfMeasure: data.unitOfMeasure,
+      currentQuantity: data.currentQuantity,
+      reorderLevel: data.reorderLevel,
+      unitCost: data.unitCost,
+      sellingPrice: data.sellingPrice,
+      location: data.location ?? null,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+    }
+
     return prisma.inventory.updateMany({
       where: { id, ...(isAdmin ? {} : { userId }) },
-      data,
+      data: updateData,
     });
   },
 

@@ -4,6 +4,8 @@ import * as React from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
+import { useSalesExpenseCategories } from "@/hooks/useSalesExpenseCategories"
 
 export function InventoryForm({
   item,
@@ -19,15 +21,25 @@ export function InventoryForm({
     itemCode: item?.itemCode || "",
     description: item?.description || "",
     unitOfMeasure: item?.unitOfMeasure || "",
-    currentQuantity: item?.currentQuantity || 0,
-    reorderLevel: item?.reorderLevel || 0,
-    unitCost: item?.unitCost || 0,
-    sellingPrice: item?.sellingPrice || 0,
+    currentQuantity: item?.currentQuantity ? String(item.currentQuantity) : "",
+    reorderLevel: item?.reorderLevel ? String(item.reorderLevel) : "",
+    unitCost: item?.unitCost ? String(item.unitCost) : "",
+    sellingPrice: item?.sellingPrice ? String(item.sellingPrice) : "",
     location: item?.location || "",
-    expiryDate: item?.expiryDate || "",
+    categoryId: item?.categoryId ? String(item.categoryId) : "",
   })
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  const [expiryDate, setExpiryDate] = React.useState<Date | undefined>(
+    item?.expiryDate ? new Date(item.expiryDate) : undefined
+  )
+
+  // Fetch categories for the dropdown
+  const { categories, loading: categoriesLoading, error: categoriesError } = useSalesExpenseCategories({ 
+    limit: 100,
+    isActive: true 
+  })
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
@@ -49,11 +61,12 @@ export function InventoryForm({
         credentials: "include",
         body: JSON.stringify({
           ...form,
-          currentQuantity: Number(form.currentQuantity),
-          reorderLevel: Number(form.reorderLevel),
-          unitCost: Number(form.unitCost),
-          sellingPrice: Number(form.sellingPrice),
-          expiryDate: form.expiryDate || null,
+          currentQuantity: Number(form.currentQuantity) || 0,
+          reorderLevel: Number(form.reorderLevel) || 0,
+          unitCost: Number(form.unitCost) || 0,
+          sellingPrice: Number(form.sellingPrice) || 0,
+          categoryId: form.categoryId ? Number(form.categoryId) : null,
+          expiryDate: expiryDate ? expiryDate.toISOString() : null,
         }),
       })
 
@@ -72,30 +85,187 @@ export function InventoryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
           {error}
         </div>
       )}
       
-      <Input name="itemName" placeholder="Item Name" value={form.itemName} onChange={handleChange} required />
-      <Input name="itemCode" placeholder="Item Code" value={form.itemCode} onChange={handleChange} required />
-      <Textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
-      <Input name="unitOfMeasure" placeholder="Unit (kg, pieces)" value={form.unitOfMeasure} onChange={handleChange} required />
-      <Input type="number" step="0.01" name="currentQuantity" placeholder="Current Quantity" value={form.currentQuantity} onChange={handleChange} />
-      <Input type="number" step="0.01" name="reorderLevel" placeholder="Reorder Level" value={form.reorderLevel} onChange={handleChange} />
-      <Input type="number" step="0.01" name="unitCost" placeholder="Unit Cost (₦)" value={form.unitCost} onChange={handleChange} />
-      <Input type="number" step="0.01" name="sellingPrice" placeholder="Selling Price (₦)" value={form.sellingPrice} onChange={handleChange} />
-      <Input name="location" placeholder="Storage Location" value={form.location} onChange={handleChange} />
-      <Input type="date" name="expiryDate" value={form.expiryDate} onChange={handleChange} />
+      <div className="space-y-2">
+        <label htmlFor="itemName" className="text-sm font-medium text-gray-700">
+          Item Name *
+        </label>
+        <Input 
+          id="itemName"
+          name="itemName" 
+          placeholder="Enter item name" 
+          value={form.itemName} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="space-y-2">
+        <label htmlFor="itemCode" className="text-sm font-medium text-gray-700">
+          Item Code *
+        </label>
+        <Input 
+          id="itemCode"
+          name="itemCode" 
+          placeholder="Enter unique item code" 
+          value={form.itemCode} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="description" className="text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <Textarea 
+          id="description"
+          name="description" 
+          placeholder="Enter item description (optional)" 
+          value={form.description} 
+          onChange={handleChange} 
+        />
+      </div>
+      
+      {/* Category Selection */}
+      <div className="space-y-2">
+        <label htmlFor="categoryId" className="text-sm font-medium text-gray-700">
+          Category
+        </label>
+        <select
+          id="categoryId"
+          name="categoryId"
+          value={form.categoryId}
+          onChange={handleChange}
+          disabled={categoriesLoading}
+          className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option value="">
+            {categoriesLoading ? "Loading categories..." : 
+             categoriesError ? "Error loading categories" :
+             "Select category (optional)..."}
+          </option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.categoryName} ({category.categoryType})
+            </option>
+          ))}
+        </select>
+        {categoriesError && (
+          <div className="text-xs text-red-600">
+            {categoriesError.message}
+          </div>
+        )}
+      </div>
+      
+      <div className="space-y-2">
+        <label htmlFor="unitOfMeasure" className="text-sm font-medium text-gray-700">
+          Unit of Measure *
+        </label>
+        <Input 
+          id="unitOfMeasure"
+          name="unitOfMeasure" 
+          placeholder="e.g., 5 kg, 10 pieces, 15 liters" 
+          value={form.unitOfMeasure} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="currentQuantity" className="text-sm font-medium text-gray-700">
+            Current Quantity
+          </label>
+          <Input 
+            id="currentQuantity"
+            type="number" 
+            step="0.01" 
+            name="currentQuantity" 
+            placeholder="0.00" 
+            value={form.currentQuantity} 
+            onChange={handleChange} 
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="reorderLevel" className="text-sm font-medium text-gray-700">
+            Reorder Level
+          </label>
+          <Input 
+            id="reorderLevel"
+            type="number" 
+            step="0.01" 
+            name="reorderLevel" 
+            placeholder="0.00" 
+            value={form.reorderLevel} 
+            onChange={handleChange} 
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="unitCost" className="text-sm font-medium text-gray-700">
+            Unit Cost (₦)
+          </label>
+          <Input 
+            id="unitCost"
+            type="number" 
+            step="0.01" 
+            name="unitCost" 
+            placeholder="0.00" 
+            value={form.unitCost} 
+            onChange={handleChange} 
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="sellingPrice" className="text-sm font-medium text-gray-700">
+            Selling Price (₦)
+          </label>
+          <Input 
+            id="sellingPrice"
+            type="number" 
+            step="0.01" 
+            name="sellingPrice" 
+            placeholder="0.00" 
+            value={form.sellingPrice} 
+            onChange={handleChange} 
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="location" className="text-sm font-medium text-gray-700">
+          Storage Location
+        </label>
+        <Input 
+          id="location"
+          name="location" 
+          placeholder="e.g., Warehouse A, Section 1" 
+          value={form.location} 
+          onChange={handleChange} 
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">Expiry Date</label>
+        <DatePicker value={expiryDate} onChange={setExpiryDate} />
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
         <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
         <Button type="submit" disabled={loading}>
-          {loading ? "Saving..." : (item ? "Update" : "Add")}
+          {loading ? "Saving..." : (item ? "Update Item" : "Add Item")}
         </Button>
       </div>
     </form>

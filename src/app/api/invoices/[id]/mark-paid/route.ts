@@ -1,17 +1,35 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 import { invoiceService } from "@/services/invoiceService"
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
-    const invoice = await invoiceService.markPaid(Number(params.id), Number(auth.user?.id), auth.user?.role)
-    if (!invoice) return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 })
+    const invoiceId = parseInt(params.id)
+    if (isNaN(invoiceId)) {
+      return Errors.Validation([{ message: "Invalid invoice ID" }])
+    }
 
-    return NextResponse.json({ success: true, data: invoice })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    const body = await req.json().catch(() => ({}))
+    const paymentData = {
+      paymentMethod: body.paymentMethod || 'cash',
+      paymentDate: body.paymentDate || new Date().toISOString(),
+      notes: body.notes || 'Marked as paid'
+    }
+
+    const updatedInvoice = await invoiceService.markInvoicePaid(invoiceId, Number(auth.user?.id), auth.user?.role, paymentData)
+
+    return Successes.Ok(updatedInvoice)
+  } catch (error: any) {
+    if (error.message.includes('not found') || error.message.includes('access denied')) {
+      return Errors.NotFound()
+    }
+    if (error.message.includes('validation') || error.message.includes('invalid')) {
+      return Errors.Validation([{ message: error.message }])
+    }
+    return Errors.Internal()
   }
 }

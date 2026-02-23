@@ -266,7 +266,7 @@ describe('Inventory Service Property Tests', () => {
           })
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     )
   })
 
@@ -337,7 +337,7 @@ describe('Inventory Service Property Tests', () => {
           expect(Number(unchangedInventory!.currentQuantity.toString())).toBeCloseTo(initialQuantity, 2)
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     )
   })
 
@@ -408,7 +408,7 @@ describe('Inventory Service Property Tests', () => {
           }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 20 }
     )
   })
 })

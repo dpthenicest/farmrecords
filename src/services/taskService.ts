@@ -42,7 +42,7 @@ export async function getTasks(userId: number | null, role: string, filters: Fil
 
   const where: any = {}
 
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId }, // Tasks created by user
       { assignedTo: userId } // Tasks assigned to user
@@ -119,7 +119,7 @@ export async function getTasks(userId: number | null, role: string, filters: Fil
 export async function getTaskById(id: number, userId: number, role: string) {
   const where: any = { id }
   
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId },
       { assignedTo: userId }
@@ -211,7 +211,7 @@ export async function createTask(userId: number, data: TaskData) {
 export async function updateTask(id: number, userId: number, role: string, data: Partial<TaskData>) {
   const where: any = { id }
   
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId },
       { assignedTo: userId }
@@ -267,7 +267,7 @@ export async function updateTask(id: number, userId: number, role: string, data:
 export async function deleteTask(id: number, userId: number, role: string) {
   const where: any = { id }
   
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId },
       { assignedTo: userId }
@@ -334,7 +334,7 @@ export async function getOverdueTasks(userId: number | null, role: string) {
     }
   }
 
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId },
       { assignedTo: userId }
@@ -384,7 +384,7 @@ export async function getOverdueTasks(userId: number | null, role: string) {
 export async function completeTask(id: number, userId: number, role: string, notes?: string) {
   const where: any = { id }
   
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.OR = [
       { userId: userId },
       { assignedTo: userId }

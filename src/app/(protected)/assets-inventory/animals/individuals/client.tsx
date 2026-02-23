@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
 
@@ -12,6 +13,7 @@ import { AnimalGrid } from "./_components/AnimalGrid"
 import { AnimalTable } from "./_components/AnimalTable"
 
 export default function IndividualAnimalsClient() {
+  const { data: session, status } = useSession()
   const [page, setPage] = React.useState(1)
   const [limit, setLimit] = React.useState(12)
   const [filters, setFilters] = React.useState<any>({})
@@ -27,6 +29,29 @@ export default function IndividualAnimalsClient() {
   })
 
   const { updateAnimal } = useUpdateAnimal()
+
+  // Show loading state while session is loading
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p>Loading session...</p>
+      </div>
+    )
+  }
+
+  // Show authentication error if not logged in
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">You must be logged in to view animals.</p>
+          <Button onClick={() => window.location.href = '/login'}>
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const handleApplyFilters = (newFilters: any) => {
     setFilters(newFilters)
@@ -68,17 +93,24 @@ export default function IndividualAnimalsClient() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Individual Animals</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Individual Animals</h1>
+          {session?.user && (
+            <p className="text-sm text-gray-600">
+              Logged in as: {session.user.email} ({session.user.role})
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button
             onClick={() => setViewMode("grid")}
-            variant={viewMode === "grid" ? "default" : "outline"}
+            variant={viewMode === "grid" ? "primary" : "outline"}
           >
             Grid
           </Button>
           <Button
             onClick={() => setViewMode("table")}
-            variant={viewMode === "table" ? "default" : "outline"}
+            variant={viewMode === "table" ? "primary" : "outline"}
           >
             Table
           </Button>
@@ -92,7 +124,7 @@ export default function IndividualAnimalsClient() {
       {/* Animal Grid/Table */}
       {viewMode === "grid" ? (
         <AnimalGrid
-          animals={animals}
+          animals={animals} 
           loading={loading}
           error={error}
           page={page}

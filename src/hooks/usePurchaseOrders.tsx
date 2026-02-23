@@ -43,8 +43,8 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
       if (!res.ok) throw new Error("Failed to fetch purchase orders")
 
       const json = await res.json()
-      setOrders(json.data || json.data?.orders || [])
-      setTotalPages(json.pagination?.pages || 1)
+      setOrders(json.data?.data || [])
+      setTotalPages(json.data?.pagination?.pages || 1)
     } catch (err: any) {
       setError(err)
     } finally {

@@ -16,7 +16,7 @@ export default function SalesExpenseCategoriesClient() {
   const [type, setType] = React.useState<"SALES" | "EXPENSE">("SALES")
 
   const { categories, totalPages, loading, error, refetch } =
-    useSalesExpenseCategories({ page, limit, type })
+    useSalesExpenseCategories({ page, limit, categoryType: type })
 
   const [showForm, setShowForm] = React.useState(false)
   const [selectedCategory, setSelectedCategory] = React.useState<any>(null)
@@ -47,11 +47,11 @@ export default function SalesExpenseCategoriesClient() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
-            onEdit={(cat) => {
+            onEdit={(cat: any) => {
               setSelectedCategory(cat)
               setShowForm(true)
             }}
-            onDelete={(cat) => console.log("delete", cat)}
+            onDelete={(cat: any) => console.log("delete", cat)}
           />
         </CardContent>
       </Card>
@@ -64,11 +64,16 @@ export default function SalesExpenseCategoriesClient() {
       >
         <CategoryForm
           category={selectedCategory}
+          defaultType={type}
           onClose={() => {
             setSelectedCategory(null)
             setShowForm(false)
           }}
-          onSaved={refetch}
+          onSaved={() => {
+            refetch()
+            setSelectedCategory(null)
+            setShowForm(false)
+          }}
         />
       </Modal>
     </div>

@@ -40,8 +40,13 @@ export function useSuppliers(filters?: SupplierFilters) {
       const res = await fetch(`/api/suppliers?${query.toString()}`, { credentials: "include" })
       if (!res.ok) throw new Error("Failed to fetch suppliers")
       const json = await res.json()
-      setSuppliers(json.data || json.data?.suppliers || [])
-      setTotalPages(json.pagination?.pages || 1)
+      
+      // Handle standardized API response format
+      const suppliersData = json.data?.data || json.data || []
+      const paginationData = json.data?.pagination || json.pagination || {}
+      
+      setSuppliers(suppliersData)
+      setTotalPages(paginationData.pages || 1)
     } catch (err: any) {
       setError(err)
     } finally {

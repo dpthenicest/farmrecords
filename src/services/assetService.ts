@@ -53,8 +53,8 @@ export async function getAssets(user: any, params: PaginationParams) {
   } = params;
 
   const where: any = {};
-  if (user.role !== "ADMIN") {
-    where.userId = user.id;
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
+    where.userId = Number(user.id);
   }
   if (assetType) where.assetType = assetType;
   if (conditionStatus) where.conditionStatus = conditionStatus;
@@ -91,7 +91,7 @@ export async function getAssetById(id: number, user: any) {
   const asset = await prisma.asset.findUnique({ where: { id } });
   if (!asset) return null;
 
-  if (user.role !== "ADMIN" && asset.userId !== user.id) {
+  if (user.role !== "ADMIN" && user.role !== "OWNER" && asset.userId !== Number(user.id)) {
     throw new Error("Forbidden");
   }
   return asset;

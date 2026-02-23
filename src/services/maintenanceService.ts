@@ -25,8 +25,8 @@ export async function getMaintenance(user: any, params: PaginationParams) {
   } = params;
 
   const where: any = {};
-  if (user.role !== "ADMIN") {
-    where.userId = user.id;
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
+    where.userId = Number(user.id);
   }
   if (status) where.status = status;
   if (maintenanceType) where.maintenanceType = maintenanceType;
@@ -67,7 +67,7 @@ export async function getMaintenanceById(id: number, user: any) {
   });
 
   if (!record) return null;
-  if (user.role !== "ADMIN" && record.userId !== user.id) {
+  if (user.role !== "ADMIN" && user.role !== "OWNER" && record.userId !== Number(user.id)) {
     throw new Error("Forbidden");
   }
   return record;
@@ -129,8 +129,8 @@ export async function deleteMaintenance(id: number, user: any) {
 // Scheduled maintenance
 export async function getScheduledMaintenance(user: any) {
   const where: any = { status: "SCHEDULED" };
-  if (user.role !== "ADMIN") {
-    where.userId = user.id;
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
+    where.userId = Number(user.id);
   }
   return prisma.assetMaintenance.findMany({
     where,

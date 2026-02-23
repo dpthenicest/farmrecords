@@ -7,7 +7,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/u
 import { DatePicker } from "@/components/ui/date-picker"
 
 const SPECIES = ["all", "fish", "chicken", "goat"]
-const HEALTH_STATUS = ["all", "healthy", "sick", "recovering"]
+const HEALTH_STATUS = ["all", "HEALTHY", "SICK", "RECOVERING", "QUARANTINE"]
 
 export function AnimalFiltersForm({ onApplyFilters }: { onApplyFilters: (filters: any) => void }) {
   const [species, setSpecies] = useState("all")
@@ -31,7 +31,7 @@ export function AnimalFiltersForm({ onApplyFilters }: { onApplyFilters: (filters
       <Select value={species} onValueChange={setSpecies}>
         <SelectTrigger className="w-[120px]">Species</SelectTrigger>
         <SelectContent>
-          {SPECIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          {SPECIES.map(s => <SelectItem key={s} value={s}>{s === "all" ? "All Species" : s[0].toUpperCase() + s.slice(1)}</SelectItem>)}
         </SelectContent>
       </Select>
 
@@ -40,7 +40,7 @@ export function AnimalFiltersForm({ onApplyFilters }: { onApplyFilters: (filters
       <Select value={healthStatus} onValueChange={setHealthStatus}>
         <SelectTrigger className="w-[120px]">Health</SelectTrigger>
         <SelectContent>
-          {HEALTH_STATUS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          {HEALTH_STATUS.map(s => <SelectItem key={s} value={s}>{s === "all" ? "All Health Status" : s}</SelectItem>)}
         </SelectContent>
       </Select>
 

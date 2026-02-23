@@ -10,6 +10,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const filters = {
       type: searchParams.get("type"),
+      categoryName: searchParams.get("categoryName"),
       isActive: searchParams.get("isActive"),
       startDate: searchParams.get("startDate"),
       endDate: searchParams.get("endDate"),

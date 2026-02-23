@@ -38,8 +38,13 @@ export function useCustomers(filters?: CustomerFilters) {
       const res = await fetch(`/api/customers?${query.toString()}`, { credentials: "include" })
       if (!res.ok) throw new Error("Failed to fetch customers")
       const json = await res.json()
-      setCustomers(json.data?.customers || json.data || [])
-      setTotalPages(json.pagination?.pages || 1)
+      
+      // Handle standardized API response format
+      const customersData = json.data?.data || json.data || []
+      const paginationData = json.data?.pagination || json.pagination || {}
+      
+      setCustomers(customersData)
+      setTotalPages(paginationData.pages || 1)
     } catch (err: any) {
       setError(err)
     } finally {

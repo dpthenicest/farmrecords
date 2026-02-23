@@ -29,7 +29,7 @@ export async function getAnimalRecords(user: any, options: QueryOptions) {
   } = options;
 
   const where: any = {};
-  if (user.role !== "ADMIN") {
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
     where.userId = Number(user.id);
   }
   if (recordType) where.recordType = recordType;
@@ -71,7 +71,7 @@ export async function getAnimalRecordById(user: any, id: number) {
   return prisma.animalRecord.findFirst({
     where: {
       id,
-      ...(user.role !== "ADMIN" ? { userId: Number(user.id) } : {}),
+      ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}),
     },
     include: {
       batch: { select: { id: true, batchCode: true, species: true } },
@@ -93,7 +93,7 @@ export async function updateAnimalRecord(user: any, id: number, data: any) {
   return prisma.animalRecord.updateMany({
     where: {
       id,
-      ...(user.role !== "ADMIN" ? { userId: Number(user.id) } : {}),
+      ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}),
     },
     data,
   });
@@ -103,7 +103,7 @@ export async function deleteAnimalRecord(user: any, id: number) {
   return prisma.animalRecord.deleteMany({
     where: {
       id,
-      ...(user.role !== "ADMIN" ? { userId: Number(user.id) } : {}),
+      ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}),
     },
   });
 }

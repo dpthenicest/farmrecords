@@ -305,6 +305,7 @@ describe('Animal Service Property Tests', () => {
           // Verify average weight calculation
           if (weights.length > 0) {
             const expectedAverage = weights.reduce((a, b) => a + b, 0) / weights.length
+            expect(metrics.averageWeight).toBeDefined()
             expect(metrics.averageWeight).toBeCloseTo(expectedAverage, 2)
           } else {
             expect(metrics.averageWeight).toBeUndefined()

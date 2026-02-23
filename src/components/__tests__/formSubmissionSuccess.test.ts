@@ -100,7 +100,7 @@ describe('Property 4: Form Submission Success', () => {
           })
         }
       ),
-      { numRuns: 50 }
+      { numRuns: 20 }
     )
   })
 

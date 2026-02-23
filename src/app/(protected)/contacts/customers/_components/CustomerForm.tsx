@@ -26,13 +26,27 @@ export function CustomerForm({ customerId, onClose, onSaved }: CustomerFormProps
     email: "",
     phone: "",
     address: "",
-    creditLimit: 0,
-    paymentTermsDays: 0,
+    creditLimit: "",
+    paymentTermsDays: "",
     paymentMethodPreference: "cash",
   })
 
   useEffect(() => {
-    if (customer) setForm(customer)
+    if (customer) {
+      setForm({
+        customerName: customer.customerName || "",
+        customerCode: customer.customerCode || "",
+        businessName: customer.businessName || "",
+        customerType: customer.customerType || "INDIVIDUAL",
+        contactPerson: customer.contactPerson || "",
+        email: customer.email || "",
+        phone: customer.phone || "",
+        address: customer.address || "",
+        creditLimit: customer.creditLimit ? String(customer.creditLimit) : "",
+        paymentTermsDays: customer.paymentTermsDays ? String(customer.paymentTermsDays) : "",
+        paymentMethodPreference: customer.paymentMethodPreference || "cash",
+      })
+    }
   }, [customer])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -42,8 +56,14 @@ export function CustomerForm({ customerId, onClose, onSaved }: CustomerFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      if (customerId) await updateCustomer(customerId, form)
-      else await createCustomer(form)
+      const submitData = {
+        ...form,
+        creditLimit: form.creditLimit ? Number(form.creditLimit) : 0,
+        paymentTermsDays: form.paymentTermsDays ? Number(form.paymentTermsDays) : 0,
+      }
+      
+      if (customerId) await updateCustomer(customerId, submitData)
+      else await createCustomer(submitData)
       onSaved()
       onClose()
     } catch (err: any) { alert(err.message) }

@@ -21,37 +21,64 @@ export function IndividualAnimalForm({ animalId, onClose, onSaved }: IndividualA
   const { updateAnimal, loading: updating } = useUpdateAnimal()
 
   const [form, setForm] = useState({
-    tag: "",
+    animalTag: "",
     species: "",
-    batch: "",
-    weight: "",
+    breed: "",
+    gender: "",
+    purchaseWeight: "",
+    currentWeight: "",
+    purchaseCost: "",
     healthStatus: "healthy",
-    lastCheck: ""
+    notes: ""
   })
 
-  const [lastCheckDate, setLastCheckDate] = useState<Date | undefined>()
+  const [birthDate, setBirthDate] = useState<Date | undefined>()
+  const [lastHealthCheck, setLastHealthCheck] = useState<Date | undefined>()
 
   useEffect(() => {
     if (animal) {
       setForm({
-        tag: animal.tag,
-        species: animal.species,
-        batch: animal.batch,
-        weight: animal.weight,
-        healthStatus: animal.healthStatus,
-        lastCheck: animal.lastCheck
+        animalTag: animal.animalTag || "",
+        species: animal.species || "",
+        breed: animal.breed || "",
+        gender: animal.gender || "",
+        purchaseWeight: animal.purchaseWeight ? String(animal.purchaseWeight) : "",
+        currentWeight: animal.currentWeight ? String(animal.currentWeight) : "",
+        purchaseCost: animal.purchaseCost ? String(animal.purchaseCost) : "",
+        healthStatus: animal.healthStatus || "healthy",
+        notes: animal.notes || ""
       })
-      setLastCheckDate(animal.lastCheck ? new Date(animal.lastCheck) : undefined)
+      setBirthDate(animal.birthDate ? new Date(animal.birthDate) : undefined)
+      setLastHealthCheck(animal.lastHealthCheck ? new Date(animal.lastHealthCheck) : undefined)
     }
   }, [animal])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const payload = { ...form, lastCheck: lastCheckDate?.toISOString() }
+    
+    if (!form.animalTag || !form.species) {
+      alert("Animal Tag and Species are required")
+      return
+    }
+
+    const payload = {
+      animalTag: form.animalTag,
+      species: form.species,
+      breed: form.breed || undefined,
+      gender: form.gender || undefined,
+      birthDate: birthDate?.toISOString(),
+      purchaseWeight: form.purchaseWeight ? Number(form.purchaseWeight) : undefined,
+      currentWeight: form.currentWeight ? Number(form.currentWeight) : undefined,
+      purchaseCost: form.purchaseCost ? Number(form.purchaseCost) : undefined,
+      healthStatus: form.healthStatus || undefined,
+      lastHealthCheck: lastHealthCheck?.toISOString(),
+      notes: form.notes || undefined
+    }
+
     try {
       if (animalId) {
         await updateAnimal(animalId, payload)
@@ -69,35 +96,106 @@ export function IndividualAnimalForm({ animalId, onClose, onSaved }: IndividualA
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Input name="tag" placeholder="Tag" value={form.tag} onChange={handleChange} required />
+      <Input 
+        name="animalTag" 
+        placeholder="Animal Tag (e.g., A001, F001)" 
+        value={form.animalTag} 
+        onChange={handleChange} 
+        required 
+      />
       
       <Select value={form.species} onValueChange={val => setForm({ ...form, species: val })}>
-        <SelectTrigger>Species</SelectTrigger>
+        <SelectTrigger>Species *</SelectTrigger>
         <SelectContent>
           {SPECIES.map(s => <SelectItem key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</SelectItem>)}
         </SelectContent>
       </Select>
 
-      <Input name="batch" placeholder="Batch" value={form.batch} onChange={handleChange} />
-      <Input name="weight" type="number" placeholder="Weight" value={form.weight} onChange={handleChange} />
+      <Input 
+        name="breed" 
+        placeholder="Breed (optional)" 
+        value={form.breed} 
+        onChange={handleChange} 
+      />
 
-      <Select value={form.healthStatus} onValueChange={val => setForm({ ...form, healthStatus: val })}>
-        <SelectTrigger>Health Status</SelectTrigger>
+      <Select value={form.gender || "NONE"} onValueChange={val => setForm({ ...form, gender: val === "NONE" ? "" : val })}>
+        <SelectTrigger>Gender</SelectTrigger>
         <SelectContent>
-          <SelectItem value="healthy">Healthy</SelectItem>
-          <SelectItem value="sick">Sick</SelectItem>
-          <SelectItem value="recovering">Recovering</SelectItem>
+          <SelectItem value="NONE">Select Gender</SelectItem>
+          <SelectItem value="MALE">Male</SelectItem>
+          <SelectItem value="FEMALE">Female</SelectItem>
         </SelectContent>
       </Select>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Last Check</label>
-        <DatePicker value={lastCheckDate} onChange={setLastCheckDate} />
+        <label className="text-sm font-medium">Birth Date</label>
+        <DatePicker value={birthDate} onChange={setBirthDate} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Input 
+            name="purchaseWeight" 
+            type="number" 
+            step="0.01"
+            placeholder="Purchase Weight (kg)" 
+            value={form.purchaseWeight} 
+            onChange={handleChange} 
+          />
+        </div>
+        <div>
+          <Input 
+            name="currentWeight" 
+            type="number" 
+            step="0.01"
+            placeholder="Current Weight (kg)" 
+            value={form.currentWeight} 
+            onChange={handleChange} 
+          />
+        </div>
+      </div>
+
+      <Input 
+        name="purchaseCost" 
+        type="number" 
+        step="0.01"
+        placeholder="Purchase Cost (₦)" 
+        value={form.purchaseCost} 
+        onChange={handleChange} 
+      />
+
+      <Select value={form.healthStatus || "NONE"} onValueChange={val => setForm({ ...form, healthStatus: val === "NONE" ? "" : val })}>
+        <SelectTrigger>Health Status</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="NONE">Select Status</SelectItem>
+          <SelectItem value="HEALTHY">Healthy</SelectItem>
+          <SelectItem value="SICK">Sick</SelectItem>
+          <SelectItem value="RECOVERING">Recovering</SelectItem>
+          <SelectItem value="QUARANTINE">Quarantine</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Last Health Check</label>
+        <DatePicker value={lastHealthCheck} onChange={setLastHealthCheck} />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium">Notes</label>
+        <textarea
+          name="notes"
+          placeholder="Additional notes about this animal..."
+          value={form.notes}
+          onChange={handleChange}
+          className="w-full rounded border p-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-green-600"
+        />
       </div>
 
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button type="submit" disabled={creating || updating}>{animalId ? "Update" : "Create"}</Button>
+        <Button type="submit" disabled={creating || updating}>
+          {animalId ? "Update Animal" : "Create Animal"}
+        </Button>
       </div>
     </form>
   )

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TablePagination } from "@/components/ui/table"
 import { ActionMenu } from "@/components/ui/action-menu"
 
@@ -64,14 +65,14 @@ export function InventoryTable({
                 <TableCell className="font-mono text-sm">{item.itemCode}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className={isLowStock ? "text-red-600 font-medium" : ""}">
+                    <span className={isLowStock ? "text-red-600 font-medium" : ""}>
                       {item.currentQuantity}
                     </span>
-                    <span className="text-xs text-muted-foreground">{item.unitOfMeasure}</span>
+                    <span className="text-xs text-muted-foreground">({item.unitOfMeasure})</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm">{item.reorderLevel} {item.unitOfMeasure}</span>
+                  <span className="text-sm">{item.reorderLevel} ({item.unitOfMeasure})</span>
                 </TableCell>
                 <TableCell>₦{Number(item.unitCost).toLocaleString()}</TableCell>
                 <TableCell className="text-sm">{item.location || "-"}</TableCell>

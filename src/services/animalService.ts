@@ -47,7 +47,7 @@ export async function getAnimals(userId: number | null, role: string, filters: F
 
   const where: any = {}
 
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.userId = userId
   }
 
@@ -84,7 +84,7 @@ export async function getAnimals(userId: number | null, role: string, filters: F
 
 export async function getAnimalById(id: number, userId: number, role: string) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   return prisma.animal.findFirst({ where })
 }
@@ -100,7 +100,7 @@ export async function createAnimal(userId: number, data: any) {
 
 export async function updateAnimal(id: number, userId: number, role: string, data: any) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   return prisma.animal.updateMany({
     where,
@@ -110,14 +110,14 @@ export async function updateAnimal(id: number, userId: number, role: string, dat
 
 export async function deleteAnimal(id: number, userId: number, role: string) {
   const where: any = { id }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   return prisma.animal.deleteMany({ where })
 }
 
 export async function getAnimalsByBatch(batchId: number, userId: number, role: string) {
   const where: any = { batchId }
-  if (role !== "ADMIN") where.userId = userId
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
 
   return prisma.animal.findMany({ where })
 }

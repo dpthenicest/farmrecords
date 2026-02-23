@@ -151,7 +151,7 @@ export function DepreciationDisplay({ asset }: DepreciationDisplayProps) {
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600">
-                  {depreciationData.yearsRemaining.toFixed(1)}
+                  {depreciationData.yearsRemaining?.toFixed(1) ?? '0.0'}
                 </div>
                 <div className="text-sm text-muted-foreground">Years Remaining</div>
               </div>

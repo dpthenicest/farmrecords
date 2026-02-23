@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 import { purchaseOrderService } from "@/services/purchaseOrderService"
 
 export async function GET(req: Request) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 });
+    if (!auth.authorized) return Errors.Unauthorized();
 
     const url = new URL(req.url)
     const filters = {
@@ -21,28 +22,31 @@ export async function GET(req: Request) {
 
     const data = await purchaseOrderService.getPurchaseOrders(
       Number(auth.user?.id),
-      auth.user?.role,
+      (auth.user as any)?.role,
       filters
     )
 
-    return NextResponse.json(data)
+    return Successes.Ok(data)
   } catch (error) {
     console.error("Error fetching purchase orders:", error)
-    return NextResponse.json({ error: "Failed to fetch purchase orders" }, { status: 500 })
+    return Errors.Internal()
   }
 }
 
 export async function POST(req: Request) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const body = await req.json()
     const po = await purchaseOrderService.createPurchaseOrder(Number(auth.user?.id), body)
 
-    return NextResponse.json(po)
-  } catch (error) {
+    return Successes.Created(po)
+  } catch (error: any) {
     console.error("Error creating purchase order:", error)
-    return NextResponse.json({ error: "Failed to create purchase order" }, { status: 500 })
+    if (error.message.includes('validation') || error.message.includes('required') || error.message.includes('invalid')) {
+      return Errors.Validation([{ message: error.message }])
+    }
+    return Errors.Internal()
   }
 }

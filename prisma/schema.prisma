@@ -112,6 +112,7 @@ model InvoiceItem {
   id              Int      @id @default(autoincrement()) @map("item_id")
   invoiceId       Int      @map("invoice_id")
   inventoryId     Int?     @map("inventory_id")
+  assetId         Int?     @map("asset_id")
   animalBatchId   Int?     @map("animal_batch_id")
   itemDescription String   @map("item_description")
   quantity        Decimal  @db.Decimal(10, 2)
@@ -122,10 +123,12 @@ model InvoiceItem {
   // Relationships
   invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   inventory   Inventory?   @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  asset       Asset?       @relation(fields: [assetId], references: [id], onDelete: SetNull)
   animalBatch AnimalBatch? @relation(fields: [animalBatchId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
   @@index([inventoryId])
+  @@index([assetId])
   @@index([animalBatchId])
   @@map("invoice_items")
 }
@@ -163,6 +166,8 @@ model PurchaseOrderItem {
   id              Int      @id @default(autoincrement()) @map("item_id")
   poId            Int      @map("po_id")
   inventoryId     Int?     @map("inventory_id")
+  assetId         Int?     @map("asset_id")
+  animalBatchId   Int?     @map("animal_batch_id")
   itemDescription String   @map("item_description")
   quantity        Decimal  @db.Decimal(10, 2)
   unitPrice       Decimal  @db.Decimal(10, 2) @map("unit_price")
@@ -174,9 +179,13 @@ model PurchaseOrderItem {
   // Relationships
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
   inventory     Inventory?    @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  asset         Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  animalBatch   AnimalBatch?  @relation(fields: [animalBatchId], references: [id], onDelete: SetNull)
 
   @@index([poId])
   @@index([inventoryId])
+  @@index([assetId])
+  @@index([animalBatchId])
   @@map("purchase_order_items")
 }
 
@@ -257,10 +266,12 @@ model Asset {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  maintenance AssetMaintenance[]
-  tasks       Task[]
+  user                User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category            SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  maintenance         AssetMaintenance[]
+  tasks               Task[]
+  invoiceItems        InvoiceItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
 
   @@unique([assetCode, userId])
   @@index([userId])
@@ -344,12 +355,13 @@ model AnimalBatch {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relationships
-  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category      SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  animals       Animal[]
-  animalRecords AnimalRecord[]
-  invoiceItems  InvoiceItem[]
-  tasks         Task[]
+  user                User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category            SalesExpenseCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  animals             Animal[]
+  animalRecords       AnimalRecord[]
+  invoiceItems        InvoiceItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  tasks               Task[]
 
   @@unique([batchCode, userId])
   @@index([userId])

@@ -71,8 +71,8 @@ export const dashboardService = {
 
     // Total Assets Value
     const totalAssetsValue = await prisma.asset.aggregate({
-      _sum: { currentValue: true },
-      where: { ...whereUser, status: "ACTIVE" },
+      _sum: { purchaseCost: true },
+      where: { ...whereUser, isActive: true },
     });
 
     // Recent Transactions (last 7 days)
@@ -102,7 +102,7 @@ export const dashboardService = {
       overdueTasks,
       upcomingMaintenance,
       overdueMaintenance,
-      totalAssetsValue: totalAssetsValue._sum.currentValue?.toFixed(2) || "0.00",
+      totalAssetsValue: totalAssetsValue._sum.purchaseCost?.toFixed(2) || "0.00",
       recentTransactions: recentTransactions.map((t) => ({
         id: t.id,
         type: t.transactionType,
@@ -248,7 +248,7 @@ export const dashboardService = {
         asset: {
           select: {
             assetName: true,
-            assetTag: true,
+            assetCode: true,
           }
         }
       },
@@ -269,7 +269,7 @@ export const dashboardService = {
         asset: {
           select: {
             assetName: true,
-            assetTag: true,
+            assetCode: true,
           }
         }
       },
@@ -336,7 +336,7 @@ export const dashboardService = {
       overdueMaintenance: overdueMaintenance.map(maintenance => ({
         id: maintenance.id,
         assetName: maintenance.asset.assetName,
-        assetTag: maintenance.asset.assetTag,
+        assetCode: maintenance.asset.assetCode,
         maintenanceType: maintenance.maintenanceType,
         scheduledDate: maintenance.scheduledDate.toISOString().split('T')[0],
         daysOverdue: Math.floor((Date.now() - maintenance.scheduledDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -344,7 +344,7 @@ export const dashboardService = {
       upcomingMaintenance: upcomingMaintenance.map(maintenance => ({
         id: maintenance.id,
         assetName: maintenance.asset.assetName,
-        assetTag: maintenance.asset.assetTag,
+        assetCode: maintenance.asset.assetCode,
         maintenanceType: maintenance.maintenanceType,
         scheduledDate: maintenance.scheduledDate.toISOString().split('T')[0],
         daysUntilDue: Math.floor((maintenance.scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -411,7 +411,7 @@ export const dashboardService = {
     const assetUtilization = await prisma.asset.findMany({
       where: {
         ...whereUser,
-        status: "ACTIVE"
+        isActive: true
       },
       include: {
         _count: {
@@ -483,8 +483,8 @@ export const dashboardService = {
       assetUtilization: assetUtilization.map(asset => ({
         id: asset.id,
         assetName: asset.assetName,
-        assetTag: asset.assetTag,
-        currentValue: asset.currentValue.toFixed(2),
+        assetCode: asset.assetCode,
+        purchaseCost: asset.purchaseCost.toFixed(2),
         maintenanceCount: asset._count.maintenance,
         utilizationScore: asset._count.maintenance > 0 ? 'High' : 'Low'
       })),

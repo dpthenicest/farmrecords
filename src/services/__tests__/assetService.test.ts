@@ -284,9 +284,13 @@ describe('Asset Service Property Tests', () => {
           }
 
           // Verify associated task was completed
+          const allTasks = await prisma.task.findMany({
+            where: { assetId: asset.id }
+          })
           const updatedTasks = await prisma.task.findMany({
             where: { assetId: asset.id, status: 'COMPLETED' }
           })
+          expect(allTasks.length).toBeGreaterThan(0)
           expect(updatedTasks.length).toBeGreaterThan(0)
           expect(updatedTasks[0].completedDate).toBeDefined()
 

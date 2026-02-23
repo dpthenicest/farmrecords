@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { generateInvoiceNumber } from "@/lib/utils"
-import { createFromInvoice, createPaymentRecord } from "./financialRecordService"
+import { createPaymentRecord, createFromInvoice, deleteFinancialRecord } from "./financialRecordService"
 import { inventoryService } from "./inventoryService"
 
 interface InvoiceFilters {
@@ -28,7 +28,7 @@ export const invoiceService = {
     } = filters
 
     const where: any = {}
-    if (role !== "ADMIN") where.userId = userId
+    if (role !== "ADMIN" && role !== "OWNER") where.userId = userId
     if (invoiceNumber) where.invoiceNumber = { contains: invoiceNumber }
     if (status) where.status = status
     if (startDate && endDate) {
@@ -43,8 +43,24 @@ export const invoiceService = {
       prisma.invoice.findMany({
         where,
         include: {
-          customer: { select: { id: true, customerName: true } },
-          items: true,
+          customer: { 
+            select: { 
+              id: true, 
+              customerName: true, 
+              customerCode: true,
+              businessName: true,
+              customerType: true,
+            } 
+          },
+          items: {
+            select: {
+              id: true,
+              itemDescription: true,
+              quantity: true,
+              unitPrice: true,
+              totalPrice: true,
+            }
+          },
         },
         skip: (page - 1) * limit,
         take: Number(limit),
@@ -67,19 +83,68 @@ export const invoiceService = {
     const invoice = await prisma.invoice.findUnique({
       where: { id },
       include: {
-        customer: { select: { id: true, customerName: true } },
-        items: true,
+        customer: {
+          select: {
+            id: true,
+            customerName: true,
+            customerCode: true,
+            businessName: true,
+            contactPerson: true,
+            email: true,
+            phone: true,
+            address: true,
+            customerType: true,
+            creditLimit: true,
+            paymentTermsDays: true,
+          }
+        },
+        items: {
+          include: {
+            inventory: {
+              select: {
+                id: true,
+                itemName: true,
+                itemCode: true,
+                sellingPrice: true,
+                currentQuantity: true,
+                unitOfMeasure: true,
+              }
+            },
+            animalBatch: {
+              select: {
+                id: true,
+                batchCode: true,
+                species: true,
+                breed: true,
+                currentQuantity: true,
+                averageWeight: true,
+                batchStatus: true,
+                location: true,
+              }
+            }
+          }
+        },
+        financialRecords: {
+          select: {
+            id: true,
+            amount: true,
+            transactionType: true,
+            transactionDate: true,
+            description: true,
+            referenceNumber: true,
+          }
+        }
       },
     })
 
     if (!invoice) return null
-    if (role !== "ADMIN" && invoice.userId !== userId) return null
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) return null
 
     return invoice
   },
 
   async createInvoice(userId: number, data: any) {
-    const { customerId, invoiceDate, dueDate, notes, items, categoryId, taxRate } = data
+    const { customerId, invoiceDate, dueDate, notes, items, taxRate, status, paymentMethod, categoryId } = data
 
     // Work with Prisma.Decimal instead of raw JS floats
     const subtotal = items.reduce(
@@ -107,11 +172,13 @@ export const invoiceService = {
         subtotal,
         taxAmount,
         totalAmount,
-        status: "DRAFT",
+        status: status || "DRAFT",
+        paymentMethod: paymentMethod || null,
         notes,
         items: {
           create: items.map((item: any) => ({
             inventoryId: item.inventoryId || null,
+            assetId: item.assetId || null,
             animalBatchId: item.animalBatchId || null,
             itemDescription: item.itemDescription,
             quantity: Number(item.quantity),
@@ -126,16 +193,6 @@ export const invoiceService = {
       },
     })
 
-    // Automatically create financial record if categoryId is provided
-    if (categoryId) {
-      try {
-        await createFromInvoice(invoice.id, userId, categoryId)
-      } catch (error) {
-        console.error("Failed to create financial record for invoice:", error)
-        // Don't fail the invoice creation if financial record creation fails
-      }
-    }
-
     // Automatically create inventory movements for items with inventory
     try {
       await inventoryService.adjustFromInvoice(items, invoice.id, userId)
@@ -144,15 +201,25 @@ export const invoiceService = {
       // Don't fail the invoice creation if inventory movements fail
     }
 
+    // Automatically create financial record when invoice is created (if status is SENT or PAID)
+    if ((status === "SENT" || status === "PAID") && categoryId) {
+      try {
+        await createFromInvoice(invoice.id, userId, categoryId)
+      } catch (error) {
+        console.error("Failed to create financial record for invoice:", error)
+        // Don't fail the invoice creation if financial record creation fails
+      }
+    }
+
     return invoice
   },
 
   async updateInvoice(id: number, userId: number, role: string, data: any) {
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) return null
-    if (role !== "ADMIN" && invoice.userId !== userId) return null
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) return null
 
-    const { customerId, invoiceDate, dueDate, notes, items, categoryId, taxRate } = data
+    const { customerId, invoiceDate, dueDate, notes, items, taxRate, status, paymentMethod } = data
 
     // Calculate totals if items are provided
     let updateData: any = {
@@ -160,6 +227,8 @@ export const invoiceService = {
       invoiceDate: invoiceDate ? new Date(invoiceDate) : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
       notes,
+      status,
+      paymentMethod,
     }
 
     if (items && items.length > 0) {
@@ -206,6 +275,7 @@ export const invoiceService = {
         data: items.map((item: any) => ({
           invoiceId: id,
           inventoryId: item.inventoryId || null,
+          assetId: item.assetId || null,
           animalBatchId: item.animalBatchId || null,
           itemDescription: item.itemDescription,
           quantity: Number(item.quantity),
@@ -232,7 +302,7 @@ export const invoiceService = {
   async deleteInvoice(id: number, userId: number, role: string) {
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) return null
-    if (role !== "ADMIN" && invoice.userId !== userId) return null
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) return null
 
     return prisma.invoice.delete({ where: { id } })
   },
@@ -240,7 +310,7 @@ export const invoiceService = {
   async sendInvoice(id: number, userId: number, role: string) {
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) return null
-    if (role !== "ADMIN" && invoice.userId !== userId) return null
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) return null
 
     return prisma.invoice.update({
       where: { id },
@@ -251,7 +321,7 @@ export const invoiceService = {
   async markPaid(id: number, userId: number, role: string, paymentData?: any) {
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) return null
-    if (role !== "ADMIN" && invoice.userId !== userId) return null
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) return null
 
     const updatedInvoice = await prisma.invoice.update({
       where: { id },
@@ -281,6 +351,65 @@ export const invoiceService = {
         console.error("Failed to create payment record:", error)
         // Don't fail the payment marking if financial record creation fails
       }
+    }
+
+    return updatedInvoice
+  },
+
+  // New methods for API endpoints
+  async markInvoicePaid(id: number, userId: number, role: string, paymentData: any) {
+    const invoice = await prisma.invoice.findUnique({ 
+      where: { id },
+      include: {
+        customer: true,
+        items: true,
+        financialRecords: true
+      }
+    })
+    
+    if (!invoice) {
+      throw new Error("Invoice not found")
+    }
+    
+    if (role !== "ADMIN" && role !== "OWNER" && invoice.userId !== userId) {
+      throw new Error("Access denied")
+    }
+
+    if (invoice.status === "PAID") {
+      throw new Error("Invoice is already marked as paid")
+    }
+
+    const updatedInvoice = await prisma.invoice.update({
+      where: { id },
+      data: { 
+        status: "PAID", 
+        paymentDate: new Date(paymentData.paymentDate),
+        paymentMethod: paymentData.paymentMethod
+      },
+      include: {
+        customer: true,
+        items: true,
+        financialRecords: true
+      }
+    })
+
+    // Create a financial record for the payment
+    try {
+      await prisma.financialRecord.create({
+        data: {
+          userId,
+          transactionType: "INCOME",
+          amount: invoice.totalAmount,
+          categoryId: 1, // You might want to make this configurable
+          customerId: invoice.customerId,
+          invoiceId: invoice.id,
+          transactionDate: new Date(paymentData.paymentDate),
+          description: `Payment received for invoice ${invoice.invoiceNumber}`,
+          referenceNumber: invoice.invoiceNumber,
+        }
+      })
+    } catch (error) {
+      console.error("Failed to create financial record for payment:", error)
     }
 
     return updatedInvoice

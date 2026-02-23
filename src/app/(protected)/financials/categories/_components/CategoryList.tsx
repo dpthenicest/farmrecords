@@ -1,8 +1,9 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { ActionMenu } from "@/components/ui/action-menu"
+import { Button } from "@/components/ui/button"
 import { TablePagination } from "@/components/ui/table"
+import { Edit, Trash2, Loader2 } from "lucide-react"
 
 export function CategoryList({
   categories,
@@ -14,9 +15,21 @@ export function CategoryList({
   onEdit,
   onDelete,
 }: any) {
-  if (loading) return <div>Loading categories...</div>
-  if (error) return <div className="text-red-600">Error: {error.message}</div>
-  if (!categories?.length) return <div>No categories found</div>
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-10">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+      </div>
+    )
+  }
+  
+  if (error) {
+    return <div className="text-red-600 text-center py-6">Error: {error.message}</div>
+  }
+  
+  if (!categories?.length) {
+    return <div className="text-gray-500 text-center py-6">No categories found</div>
+  }
 
   return (
     <div className="space-y-4">
@@ -27,20 +40,31 @@ export function CategoryList({
             className="p-4 border rounded-lg flex flex-col justify-between"
           >
             <div>
-              <h3 className="font-semibold text-lg">{cat.name}</h3>
-              <p className="text-sm text-gray-500">{cat.description}</p>
+              <h3 className="font-semibold text-lg">{cat.categoryName}</h3>
+              <p className="text-sm text-gray-500 mb-2">{cat.description || "No description"}</p>
+              <span className={`inline-block px-2 py-1 rounded text-xs ${
+                cat.categoryType === 'SALES' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+              }`}>
+                {cat.categoryType}
+              </span>
             </div>
-            <div className="flex items-center justify-between mt-4">
-              <span
-                className="inline-block w-4 h-4 rounded-full"
-                style={{ backgroundColor: cat.color || "#ccc" }}
-              />
-              <ActionMenu
-                showEdit
-                showDelete
-                onEdit={() => onEdit(cat)}
-                onDelete={() => onDelete(cat)}
-              />
+            <div className="flex items-center justify-end gap-1 mt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEdit(cat)}
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(cat)}
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
         ))}

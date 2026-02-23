@@ -9,8 +9,8 @@ import {
   TableCell,
   TablePagination,
 } from "@/components/ui/table"
-import { ActionMenu } from "@/components/ui/action-menu"
-import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Eye, Edit, Trash2, Send, Package } from "lucide-react"
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -69,10 +69,10 @@ export function PurchaseOrderTable({
           {purchaseOrders.map((po: any) => (
             <TableRow key={po.id}>
               <TableCell>{po.poNumber}</TableCell>
-              <TableCell>{po.supplier?.name || "N/A"}</TableCell>
+              <TableCell>{po.supplier?.supplierName || "N/A"}</TableCell>
               <TableCell>{new Date(po.orderDate).toLocaleDateString()}</TableCell>
               <TableCell>{new Date(po.expectedDeliveryDate).toLocaleDateString()}</TableCell>
-              <TableCell>₦{po.total?.toFixed(2)}</TableCell>
+              <TableCell>₦{Number(po.totalAmount || 0).toLocaleString()}</TableCell>
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded text-xs ${
@@ -83,18 +83,48 @@ export function PurchaseOrderTable({
                 </span>
               </TableCell>
               <TableCell>
-                <ActionMenu
-                  onView={() => onView(po)}
-                  onEdit={() => onEdit(po)}
-                  onDelete={() => onDelete(po)}
-                  onSend={() => onSend(po)}
-                  onReceive={() => onReceive(po)}
-                  showView
-                  showEdit
-                  showDelete
-                  showSend
-                  showReceive
-                />
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onView(po)}
+                    title="View"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(po)}
+                    title="Edit"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onSend(po)}
+                    title="Send"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onReceive(po)}
+                    title="Receive"
+                  >
+                    <Package className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(po)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

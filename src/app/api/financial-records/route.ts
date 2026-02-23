@@ -40,16 +40,16 @@ export async function POST(req: Request) {
   const auth = await requireAuth();
   if (!auth.authorized) return Errors.Unauthorized();
 
-  const { user } = auth;
-
-  try {
-    const body = await req.json();
-    const record = await createFinancialRecord(body, Number(user?.id));
-    return Successes.Created(record);
-  } catch (err: any) {
-    if (err.message.includes('validation') || err.message.includes('required') || err.message.includes('invalid')) {
-      return Errors.Validation([{ message: err.message }]);
-    }
-    return Errors.Internal();
-  }
+  // Disable manual financial record creation
+  // Financial records are now automatically created from invoices and purchase orders
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code: "MANUAL_CREATION_DISABLED",
+        message: "Manual financial record creation is disabled. Financial records are automatically created when invoices are sent/paid or purchase orders are received."
+      }
+    },
+    { status: 403 }
+  );
 }

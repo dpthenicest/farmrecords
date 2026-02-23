@@ -1,38 +1,91 @@
 "use client"
 
+import * as React from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useSalesExpenseCategories } from "@/hooks/useSalesExpenseCategories"
+
+interface InventoryFiltersProps {
+  search: string
+  onSearch: (value: string) => void
+  category: string
+  onCategoryChange: (value: string) => void
+  lowStock: boolean
+  onLowStockChange: (checked: boolean) => void
+  onApplyFilters: () => void
+}
 
 export function InventoryFilters({
   search,
   onSearch,
-  category,
   onCategoryChange,
   lowStock,
   onLowStockChange,
   onApplyFilters,
-}: any) {
+}: InventoryFiltersProps) {
+  const [categoryType, setCategoryType] = React.useState<"SALES" | "EXPENSE" | "all-types">("all-types")
+  const [specificCategory, setSpecificCategory] = React.useState("all-categories")
+
+  // Fetch categories based on selected type
+  const { categories, loading } = useSalesExpenseCategories({
+    categoryType: categoryType === "all-types" ? undefined : categoryType,
+    limit: 100, // Get all categories for the dropdown
+  })
+
+  // Reset specific category when type changes
+  React.useEffect(() => {
+    setSpecificCategory("all-categories")
+  }, [categoryType])
+
+  // Update parent category when specific category changes
+  React.useEffect(() => {
+    onCategoryChange(specificCategory === "all-categories" ? "" : specificCategory)
+  }, [specificCategory, onCategoryChange])
+
   return (
     <div className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 border rounded-lg">
-      {/* Category */}
+      {/* Category Type Filter */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-muted-foreground">Category</label>
-        <Select value={category} onValueChange={onCategoryChange}>
+        <label className="text-xs font-medium text-muted-foreground">Category Type</label>
+        <Select value={categoryType} onValueChange={(value: string) => setCategoryType(value as "SALES" | "EXPENSE" | "all-types")}>
           <SelectTrigger className="w-[150px]">
-            {category === "all" ? "All Categories" : category}
+            {categoryType === "all-types" ? "All Types" : categoryType}
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="feed">Animal Feed</SelectItem>
-            <SelectItem value="medicine">Medicine</SelectItem>
-            <SelectItem value="equipment">Equipment</SelectItem>
-            <SelectItem value="supplies">Supplies</SelectItem>
-            <SelectItem value="seeds">Seeds</SelectItem>
-            <SelectItem value="fertilizer">Fertilizer</SelectItem>
-            <SelectItem value="fuel">Fuel</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
+            <SelectItem value="all-types">All Types</SelectItem>
+            <SelectItem value="SALES">Sales</SelectItem>
+            <SelectItem value="EXPENSE">Expense</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Specific Category Filter */}
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-medium text-muted-foreground">Category</label>
+        <Select 
+          value={specificCategory} 
+          onValueChange={setSpecificCategory}
+          disabled={categoryType === "all-types"}
+        >
+          <SelectTrigger className="w-[180px]">
+            {specificCategory === "all-categories" 
+              ? (categoryType === "all-types" ? "Select Type First" : "All Categories")
+              : specificCategory
+            }
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all-categories">All Categories</SelectItem>
+            {loading ? (
+              <SelectItem value="loading" disabled>Loading...</SelectItem>
+            ) : (
+              categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.categoryName}>
+                  {cat.categoryName}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -60,8 +113,26 @@ export function InventoryFilters({
       {/* Apply Button */}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-muted-foreground invisible">Action</label>
-        <Button variant="default" onClick={onApplyFilters} className="h-9">
+        <Button variant="outline" onClick={onApplyFilters} className="h-9">
           Apply Filters
+        </Button>
+      </div>
+
+      {/* Clear Filters Button */}
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-medium text-muted-foreground invisible">Clear</label>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setCategoryType("all-types")
+            setSpecificCategory("all-categories")
+            onSearch("")
+            onLowStockChange(false)
+            onApplyFilters()
+          }} 
+          className="h-9"
+        >
+          Clear
         </Button>
       </div>
     </div>

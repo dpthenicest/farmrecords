@@ -12,9 +12,9 @@ export async function getCustomers(user: any, { page, limit, sortBy, order, filt
     where.createdAt = { gte: new Date(filters.startDate), lte: new Date(filters.endDate) };
   }
 
-  // If not ADMIN → only own customers
-  if (user.role !== "ADMIN") {
-    where.userId = user.id;
+  // If not ADMIN or OWNER → only own customers
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
+    where.userId = Number(user.id);
   }
 
   const total = await prisma.customer.count({ where });
@@ -48,14 +48,40 @@ export async function getCustomers(user: any, { page, limit, sortBy, order, filt
 
 export async function getCustomerById(user: any, id: number) {
   return prisma.customer.findUniqueOrThrow({
-    where: { id, ...(user.role !== "ADMIN" ? { userId: user.id } : {}) },
+    where: { id, ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}) },
   });
 }
 
 export async function createCustomer(user: any, data: any) {
+  // Validate required fields
+  if (!data.customerName || !data.customerCode) {
+    throw new Error("Customer name and code are required");
+  }
+
+  // Validate user exists (referential integrity)
+  const userId = Number(user.id);
+  const userExists = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!userExists) {
+    throw new Error(`Invalid user ID ${userId}. Please log out and log back in with valid credentials.`);
+  }
+
+  // Validate and convert numeric fields
+  const paymentTermsDays = data.paymentTermsDays ? parseInt(data.paymentTermsDays) : null;
+  if (data.paymentTermsDays && (isNaN(paymentTermsDays) || paymentTermsDays < 0)) {
+    throw new Error("Payment terms days must be a valid positive number");
+  }
+
+  const creditLimit = data.creditLimit ? new Decimal(data.creditLimit) : null;
+  if (data.creditLimit && (isNaN(Number(data.creditLimit)) || Number(data.creditLimit) < 0)) {
+    throw new Error("Credit limit must be a valid positive number");
+  }
+
   return prisma.customer.create({
     data: {
-      userId: user.id,
+      userId,
       customerName: data.customerName,
       customerCode: data.customerCode,
       businessName: data.businessName,
@@ -64,8 +90,8 @@ export async function createCustomer(user: any, data: any) {
       phone: data.phone,
       address: data.address,
       customerType: data.customerType,
-      creditLimit: data.creditLimit ? new Decimal(data.creditLimit) : undefined,
-      paymentTermsDays: data.paymentTermsDays,
+      creditLimit,
+      paymentTermsDays,
       paymentMethodPreference: data.paymentMethodPreference,
       notes: data.notes,
     },
@@ -84,7 +110,7 @@ export async function createCustomer(user: any, data: any) {
 
 export async function updateCustomer(user: any, id: number, data: any) {
   return prisma.customer.update({
-    where: { id, ...(user.role !== "ADMIN" ? { userId: user.id } : {}) },
+    where: { id, ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}) },
     data,
   });
 }

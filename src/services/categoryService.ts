@@ -8,17 +8,24 @@ interface Pagination {
 }
 
 export async function getCategoriesService(userId: number, role: string, filters: any, pagination: Pagination) {
-  const { type, isActive, startDate, endDate } = filters;
+  const { type, isActive, startDate, endDate, categoryName } = filters;
   const { page = 1, limit = 20, sortBy = "createdAt", sortOrder = "desc" } = pagination;
 
   const where: any = {};
 
   // Admin sees all, normal users only their own
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.userId = userId;
   }
 
   if (type) where.categoryType = type;
+
+  if (categoryName) {
+    where.categoryName = {
+      contains: categoryName,
+      mode: 'insensitive'
+    };
+  }
 
   if (isActive === "true") where.isActive = true;
   if (isActive === "false") where.isActive = false;
@@ -52,7 +59,7 @@ export async function getCategoriesService(userId: number, role: string, filters
 
 export async function getCategoryByIdService(userId: number, role: string, id: number) {
   const where: any = { id };
-  if (role !== "ADMIN") where.userId = userId;
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId;
 
   return prisma.salesExpenseCategory.findFirst({ where });
 }
@@ -68,7 +75,7 @@ export async function createCategoryService(userId: number, data: any) {
 
 export async function updateCategoryService(userId: number, role: string, id: number, data: any) {
   const where: any = { id };
-  if (role !== "ADMIN") where.userId = userId;
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId;
 
   return prisma.salesExpenseCategory.updateMany({
     where,
@@ -78,7 +85,7 @@ export async function updateCategoryService(userId: number, role: string, id: nu
 
 export async function deleteCategoryService(userId: number, role: string, id: number) {
   const where: any = { id };
-  if (role !== "ADMIN") where.userId = userId;
+  if (role !== "ADMIN" && role !== "OWNER") where.userId = userId;
 
   return prisma.salesExpenseCategory.deleteMany({ where });
 }

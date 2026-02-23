@@ -3,9 +3,8 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-import { useAnimalRecords, useCreateAnimalRecord, useUpdateAnimalRecord, useDeleteAnimalRecord } from "@/hooks/useAnimalRecords"
+import { useAnimalRecords, useDeleteAnimalRecord } from "@/hooks/useAnimalRecords"
 import { AnimalRecordFiltersForm } from "./_components/AnimalRecordFiltersForm"
 import { AnimalRecordForm } from "./_components/AnimalRecordForm"
 import { AnimalRecordGrid } from "./_components/AnimalRecordGrid"
@@ -165,17 +164,16 @@ export default function AnimalRecordsClient() {
   const [showForm, setShowForm] = React.useState(false)
   const [editRecordId, setEditRecordId] = React.useState<number | null>(null)
   const [viewMode, setViewMode] = React.useState<"grid" | "table">("grid")
-  const [tab, setTab] = React.useState<string>("ALL")
+  const [showAnalytics, setShowAnalytics] = React.useState(false)
 
-  const { records, totalPages, loading, error, refetch } = useAnimalRecords({ page, limit, ...filters, recordType: tab === "ALL" ? undefined : tab })
+  const { records, totalPages, loading, error, refetch } = useAnimalRecords({ page, limit, ...filters })
 
-  const { createRecord } = useCreateAnimalRecord()
-  const { updateRecord } = useUpdateAnimalRecord()
   const { deleteRecord } = useDeleteAnimalRecord()
 
   const handleApplyFilters = (newFilters: any) => {
     setFilters(newFilters)
     setPage(1)
+    setShowAnalytics(false) // Exit analytics when filters change
   }
 
   const handleCreate = () => {
@@ -206,31 +204,24 @@ export default function AnimalRecordsClient() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Animal Records</h1>
         <div className="flex gap-2">
-          <Button onClick={() => setViewMode("grid")} variant={viewMode === "grid" ? "default" : "outline"}>Grid</Button>
-          <Button onClick={() => setViewMode("table")} variant={viewMode === "table" ? "default" : "outline"}>Table</Button>
+          {!showAnalytics && (
+            <>
+              <Button onClick={() => setViewMode("grid")} variant={viewMode === "grid" ? "primary" : "outline"}>Grid</Button>
+              <Button onClick={() => setViewMode("table")} variant={viewMode === "table" ? "primary" : "outline"}>Table</Button>
+            </>
+          )}
+          <Button onClick={() => setShowAnalytics(!showAnalytics)} variant={showAnalytics ? "primary" : "outline"}>
+            📊 Analytics
+          </Button>
           <Button onClick={handleCreate}>+ Add Record</Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="ALL">All Records</TabsTrigger>
-          <TabsTrigger value="HEALTH_CHECK">Health Checks</TabsTrigger>
-          <TabsTrigger value="VACCINATION">Vaccinations</TabsTrigger>
-          <TabsTrigger value="FEEDING">Feeding</TabsTrigger>
-          <TabsTrigger value="PRODUCTION">Production</TabsTrigger>
-          <TabsTrigger value="BREEDING">Breeding</TabsTrigger>
-          <TabsTrigger value="MORTALITY">Mortality</TabsTrigger>
-          <TabsTrigger value="ANALYTICS">📊 Analytics</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Filters */}
-      {tab !== "ANALYTICS" && <AnimalRecordFiltersForm onApplyFilters={handleApplyFilters} />}
+      {/* Filters - Only show when not in analytics view */}
+      {!showAnalytics && <AnimalRecordFiltersForm onApplyFilters={handleApplyFilters} />}
 
       {/* Content */}
-      {tab === "ANALYTICS" ? (
+      {showAnalytics ? (
         <AnalyticsView records={records} loading={loading} error={error} />
       ) : (
         <>
@@ -265,17 +256,37 @@ export default function AnimalRecordsClient() {
         </>
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal open={showForm} onOpenChange={setShowForm} title={editRecordId ? "Edit Record" : "Add Record"}>
-        <AnimalRecordForm
-          recordId={editRecordId || undefined}
-          onClose={() => setShowForm(false)}
-          onSaved={() => {
-            refetch()
-            setShowForm(false)
-          }}
-        />
-      </Modal>
+      {/* Create/Edit Modal - Large Custom Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h2 className="text-lg font-semibold">
+                {editRecordId ? "Edit Animal Record" : "Add Animal Record"}
+              </h2>
+              <button
+                onClick={() => {
+                  setEditRecordId(null)
+                  setShowForm(false)
+                }}
+                className="p-2 hover:bg-gray-100 rounded"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <AnimalRecordForm
+                recordId={editRecordId || undefined}
+                onClose={() => setShowForm(false)}
+                onSaved={() => {
+                  refetch()
+                  setShowForm(false)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Record Modal */}
       <Modal open={!!selectedRecordId} onOpenChange={() => setSelectedRecordId(null)} title="Record Details">

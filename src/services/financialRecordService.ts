@@ -51,7 +51,7 @@ export async function getFinancialRecords(params: FetchRecordsParams) {
   const where: any = {};
 
   // If not ADMIN, restrict to their own records
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.userId = userId;
   }
 
@@ -102,7 +102,7 @@ export async function getFinancialRecordById(id: number, userId: number, role: s
 
   if (!record) return null;
 
-  if (role !== "ADMIN" && record.userId !== userId) {
+  if (role !== "ADMIN" && role !== "OWNER" && record.userId !== userId) {
     throw new Error("Forbidden");
   }
 
@@ -122,7 +122,7 @@ export async function updateFinancialRecord(id: number, data: any, userId: numbe
   const existing = await prisma.financialRecord.findUnique({ where: { id } });
   if (!existing) return null;
 
-  if (role !== "ADMIN" && existing.userId !== userId) {
+  if (role !== "ADMIN" && role !== "OWNER" && existing.userId !== userId) {
     throw new Error("Forbidden");
   }
 
@@ -136,7 +136,7 @@ export async function deleteFinancialRecord(id: number, userId: number, role: st
   const existing = await prisma.financialRecord.findUnique({ where: { id } });
   if (!existing) return null;
 
-  if (role !== "ADMIN" && existing.userId !== userId) {
+  if (role !== "ADMIN" && role !== "OWNER" && existing.userId !== userId) {
     throw new Error("Forbidden");
   }
 
@@ -254,7 +254,7 @@ export async function getRecordsBySource(sourceType: string, sourceId: number, u
   const where: any = {};
 
   // If not ADMIN, restrict to their own records
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" && role !== "OWNER") {
     where.userId = userId;
   }
 

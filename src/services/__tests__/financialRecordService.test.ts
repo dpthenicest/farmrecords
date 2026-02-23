@@ -46,7 +46,7 @@ describe('Financial Record Service Property Tests', () => {
         // Generate test data
         fc.record({
           user: fc.record({
-            username: fc.string({ minLength: 3, maxLength: 20 }).map(s => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${s.replace(/\s/g, '_')}`),
+            username: fc.string({ minLength: 3, maxLength: 20 }).map(s => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.random().toString(36).substr(2, 9)}_${s.replace(/\s/g, '_')}`),
             email: fc.emailAddress(),
             passwordHash: fc.string({ minLength: 10 }),
             firstName: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),

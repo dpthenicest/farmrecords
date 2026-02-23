@@ -3,12 +3,8 @@
 import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Select } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useCreateAnimalRecord, useUpdateAnimalRecord, useAnimalRecord } from "@/hooks/useAnimalRecords"
-import { useAnimals } from "@/hooks/useAnimals"
 import { useAnimalBatches } from "@/hooks/useAnimalBatches"
 
 interface AnimalRecordFormProps {
@@ -38,13 +34,10 @@ const HEALTH_STATUSES = [
 
 export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFormProps) {
   const { record } = useAnimalRecord(recordId)
-  const { animals } = useAnimals({ limit: 100 })
-  const { animalBatches } = useAnimalBatches({ limit: 100 })
+  const { batches } = useAnimalBatches({ limit: 100 })
 
   const [formData, setFormData] = useState({
     recordType: "FEEDING",
-    recordDate: new Date().toISOString().split('T')[0],
-    animalId: "",
     batchId: "",
     weight: "",
     feedConsumption: "",
@@ -57,8 +50,8 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
     notes: ""
   })
 
+  const [recordDate, setRecordDate] = useState<Date | undefined>(new Date())
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [associationType, setAssociationType] = useState<"animal" | "batch">("animal")
 
   const { createRecord, loading: creating } = useCreateAnimalRecord()
   const { updateRecord, loading: updating } = useUpdateAnimalRecord()
@@ -67,8 +60,6 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
     if (record) {
       setFormData({
         recordType: record.recordType || "FEEDING",
-        recordDate: record.recordDate ? new Date(record.recordDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        animalId: record.animalId ? record.animalId.toString() : "",
         batchId: record.batchId ? record.batchId.toString() : "",
         weight: record.weight ? Number(record.weight).toString() : "",
         feedConsumption: record.feedConsumption ? Number(record.feedConsumption).toString() : "",
@@ -80,7 +71,7 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
         productionOutput: record.productionOutput ? Number(record.productionOutput).toString() : "",
         notes: record.notes || ""
       })
-      setAssociationType(record.animalId ? "animal" : "batch")
+      setRecordDate(record.recordDate ? new Date(record.recordDate) : new Date())
     }
   }, [record])
 
@@ -98,18 +89,36 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
       newErrors.recordType = "Record type is required"
     }
 
-    if (!formData.recordDate) {
+    if (!recordDate) {
       newErrors.recordDate = "Record date is required"
     }
 
-    if (associationType === "animal" && !formData.animalId) {
-      newErrors.animalId = "Animal selection is required"
+    if (!formData.batchId) {
+      newErrors.batchId = "Animal batch selection is required"
     }
 
-    if (associationType === "batch" && !formData.batchId) {
-      newErrors.batchId = "Batch selection is required"
+    // Type-specific validations
+    if (formData.recordType === "WEIGHING" && !formData.weight) {
+      newErrors.weight = "Weight is required for weighing records"
     }
 
+    if (formData.recordType === "FEEDING" && !formData.feedConsumption) {
+      newErrors.feedConsumption = "Feed consumption is required for feeding records"
+    }
+
+    if (formData.recordType === "HEALTH_CHECK" && !formData.healthStatus) {
+      newErrors.healthStatus = "Health status is required for health check records"
+    }
+
+    if (formData.recordType === "PRODUCTION" && !formData.productionOutput) {
+      newErrors.productionOutput = "Production output is required for production records"
+    }
+
+    if (formData.recordType === "MORTALITY" && !formData.mortalityCount) {
+      newErrors.mortalityCount = "Mortality count is required for mortality records"
+    }
+
+    // General validations
     if (formData.weight && isNaN(Number(formData.weight))) {
       newErrors.weight = "Weight must be a valid number"
     }
@@ -148,9 +157,9 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
     try {
       const submitData = {
         recordType: formData.recordType,
-        recordDate: new Date(formData.recordDate),
-        animalId: associationType === "animal" && formData.animalId ? Number(formData.animalId) : null,
-        batchId: associationType === "batch" && formData.batchId ? Number(formData.batchId) : null,
+        recordDate: recordDate,
+        animalId: null,
+        batchId: Number(formData.batchId),
         weight: formData.weight ? Number(formData.weight) : null,
         feedConsumption: formData.feedConsumption ? Number(formData.feedConsumption) : null,
         medicationCost: formData.medicationCost ? Number(formData.medicationCost) : null,
@@ -183,12 +192,8 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
   const loading = creating || updating
 
   return (
-    <Card className="w-full max-w-3xl">
-      <CardHeader>
-        <CardTitle>{recordId ? "Edit Animal Record" : "Add New Animal Record"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {errors.general}
@@ -198,193 +203,167 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="recordType">Record Type *</Label>
-              <Select
+              <label htmlFor="recordType" className="text-sm font-medium">Record Type *</label>
+              <select
+                id="recordType"
                 value={formData.recordType}
-                onValueChange={(value) => handleChange("recordType", value)}
+                onChange={(e) => handleChange("recordType", e.target.value)}
+                className="w-full rounded border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-green-600"
               >
                 {RECORD_TYPES.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
-              </Select>
+              </select>
               {errors.recordType && <p className="text-red-500 text-sm">{errors.recordType}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="recordDate">Record Date *</Label>
-              <Input
-                id="recordDate"
-                type="date"
-                value={formData.recordDate}
-                onChange={(e) => handleChange("recordDate", e.target.value)}
-                className={errors.recordDate ? "border-red-500" : ""}
+              <label htmlFor="recordDate" className="text-sm font-medium">Record Date *</label>
+              <DatePicker
+                value={recordDate}
+                onChange={setRecordDate}
               />
               {errors.recordDate && <p className="text-red-500 text-sm">{errors.recordDate}</p>}
             </div>
           </div>
 
-          {/* Animal/Batch Association */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Association Type *</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="associationType"
-                    value="animal"
-                    checked={associationType === "animal"}
-                    onChange={(e) => {
-                      setAssociationType("animal")
-                      handleChange("batchId", "")
-                    }}
-                  />
-                  <span>Individual Animal</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="associationType"
-                    value="batch"
-                    checked={associationType === "batch"}
-                    onChange={(e) => {
-                      setAssociationType("batch")
-                      handleChange("animalId", "")
-                    }}
-                  />
-                  <span>Animal Batch</span>
-                </label>
-              </div>
-            </div>
+          {/* Animal Batch Selection */}
+          <div className="space-y-2">
+            <label htmlFor="batchId" className="text-sm font-medium">Select Animal Batch *</label>
+            <select
+              id="batchId"
+              value={formData.batchId}
+              onChange={(e) => handleChange("batchId", e.target.value)}
+              className="w-full rounded border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+            >
+              <option value="">Select a batch</option>
+              {batches?.map((batch) => (
+                <option key={batch.id} value={batch.id.toString()}>
+                  {batch.batchCode} - {batch.species} {batch.breed ? `(${batch.breed})` : ''} - {batch.currentQuantity} animals
+                </option>
+              ))}
+            </select>
+            {errors.batchId && <p className="text-red-500 text-sm">{errors.batchId}</p>}
+          </div>
 
-            {associationType === "animal" ? (
+          {/* Measurements - Show based on record type */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Weight - Show for WEIGHING, HEALTH_CHECK, GENERAL */}
+            {(formData.recordType === "WEIGHING" || formData.recordType === "HEALTH_CHECK" || formData.recordType === "GENERAL") && (
               <div className="space-y-2">
-                <Label htmlFor="animalId">Select Animal *</Label>
-                <Select
-                  value={formData.animalId}
-                  onValueChange={(value) => handleChange("animalId", value)}
-                >
-                  <option value="">Select an animal</option>
-                  {animals?.map((animal) => (
-                    <option key={animal.id} value={animal.id.toString()}>
-                      {animal.animalTag} - {animal.species} ({animal.breed || "Unknown breed"})
-                    </option>
-                  ))}
-                </Select>
-                {errors.animalId && <p className="text-red-500 text-sm">{errors.animalId}</p>}
+                <label htmlFor="weight" className="text-sm font-medium">
+                  Weight (kg) {formData.recordType === "WEIGHING" ? "*" : ""}
+                </label>
+                <Input
+                  id="weight"
+                  type="number"
+                  step="0.1"
+                  placeholder="0.0"
+                  value={formData.weight}
+                  onChange={(e) => handleChange("weight", e.target.value)}
+                  required={formData.recordType === "WEIGHING"}
+                />
+                {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
               </div>
-            ) : (
+            )}
+
+            {/* Temperature - Show for HEALTH_CHECK, VACCINATION */}
+            {(formData.recordType === "HEALTH_CHECK" || formData.recordType === "VACCINATION") && (
               <div className="space-y-2">
-                <Label htmlFor="batchId">Select Batch *</Label>
-                <Select
-                  value={formData.batchId}
-                  onValueChange={(value) => handleChange("batchId", value)}
-                >
-                  <option value="">Select a batch</option>
-                  {animalBatches?.map((batch) => (
-                    <option key={batch.id} value={batch.id.toString()}>
-                      {batch.batchCode} - {batch.species} ({batch.currentQuantity} animals)
-                    </option>
-                  ))}
-                </Select>
-                {errors.batchId && <p className="text-red-500 text-sm">{errors.batchId}</p>}
+                <label htmlFor="temperature" className="text-sm font-medium">Temperature (°C)</label>
+                <Input
+                  id="temperature"
+                  type="number"
+                  step="0.1"
+                  placeholder="0.0"
+                  value={formData.temperature}
+                  onChange={(e) => handleChange("temperature", e.target.value)}
+                />
+                {errors.temperature && <p className="text-red-500 text-sm">{errors.temperature}</p>}
+              </div>
+            )}
+
+            {/* Feed Consumption - Show for FEEDING */}
+            {formData.recordType === "FEEDING" && (
+              <div className="space-y-2">
+                <label htmlFor="feedConsumption" className="text-sm font-medium">Feed Consumption (kg) *</label>
+                <Input
+                  id="feedConsumption"
+                  type="number"
+                  step="0.1"
+                  placeholder="0.0"
+                  value={formData.feedConsumption}
+                  onChange={(e) => handleChange("feedConsumption", e.target.value)}
+                  required
+                />
+                {errors.feedConsumption && <p className="text-red-500 text-sm">{errors.feedConsumption}</p>}
               </div>
             )}
           </div>
 
-          {/* Measurements */}
+          {/* Health and Production - Show based on record type */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="weight">Weight (kg)</Label>
-              <Input
-                id="weight"
-                type="number"
-                step="0.1"
-                placeholder="0.0"
-                value={formData.weight}
-                onChange={(e) => handleChange("weight", e.target.value)}
-                className={errors.weight ? "border-red-500" : ""}
-              />
-              {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
-            </div>
+            {/* Health Status - Show for HEALTH_CHECK, VACCINATION, GENERAL */}
+            {(formData.recordType === "HEALTH_CHECK" || formData.recordType === "VACCINATION" || formData.recordType === "GENERAL") && (
+              <div className="space-y-2">
+                <label htmlFor="healthStatus" className="text-sm font-medium">
+                  Health Status {formData.recordType === "HEALTH_CHECK" ? "*" : ""}
+                </label>
+                <select
+                  id="healthStatus"
+                  value={formData.healthStatus}
+                  onChange={(e) => handleChange("healthStatus", e.target.value)}
+                  className="w-full rounded border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  required={formData.recordType === "HEALTH_CHECK"}
+                >
+                  <option value="">Select status</option>
+                  {HEALTH_STATUSES.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="temperature">Temperature (°C)</Label>
-              <Input
-                id="temperature"
-                type="number"
-                step="0.1"
-                placeholder="0.0"
-                value={formData.temperature}
-                onChange={(e) => handleChange("temperature", e.target.value)}
-                className={errors.temperature ? "border-red-500" : ""}
-              />
-              {errors.temperature && <p className="text-red-500 text-sm">{errors.temperature}</p>}
-            </div>
+            {/* Medication Cost - Show for HEALTH_CHECK, VACCINATION */}
+            {(formData.recordType === "HEALTH_CHECK" || formData.recordType === "VACCINATION") && (
+              <div className="space-y-2">
+                <label htmlFor="medicationCost" className="text-sm font-medium">Medication Cost (₦)</label>
+                <Input
+                  id="medicationCost"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.medicationCost}
+                  onChange={(e) => handleChange("medicationCost", e.target.value)}
+                />
+                {errors.medicationCost && <p className="text-red-500 text-sm">{errors.medicationCost}</p>}
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="feedConsumption">Feed Consumption (kg)</Label>
-              <Input
-                id="feedConsumption"
-                type="number"
-                step="0.1"
-                placeholder="0.0"
-                value={formData.feedConsumption}
-                onChange={(e) => handleChange("feedConsumption", e.target.value)}
-                className={errors.feedConsumption ? "border-red-500" : ""}
-              />
-              {errors.feedConsumption && <p className="text-red-500 text-sm">{errors.feedConsumption}</p>}
-            </div>
-          </div>
-
-          {/* Health and Production */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="healthStatus">Health Status</Label>
-              <Select
-                value={formData.healthStatus}
-                onValueChange={(value) => handleChange("healthStatus", value)}
-              >
-                <option value="">Select status</option>
-                {HEALTH_STATUSES.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medicationCost">Medication Cost ($)</Label>
-              <Input
-                id="medicationCost"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.medicationCost}
-                onChange={(e) => handleChange("medicationCost", e.target.value)}
-                className={errors.medicationCost ? "border-red-500" : ""}
-              />
-              {errors.medicationCost && <p className="text-red-500 text-sm">{errors.medicationCost}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="productionOutput">Production Output</Label>
-              <Input
-                id="productionOutput"
-                type="number"
-                step="0.1"
-                placeholder="0.0"
-                value={formData.productionOutput}
-                onChange={(e) => handleChange("productionOutput", e.target.value)}
-                className={errors.productionOutput ? "border-red-500" : ""}
-              />
-              {errors.productionOutput && <p className="text-red-500 text-sm">{errors.productionOutput}</p>}
-            </div>
+            {/* Production Output - Show for PRODUCTION, BREEDING */}
+            {(formData.recordType === "PRODUCTION" || formData.recordType === "BREEDING") && (
+              <div className="space-y-2">
+                <label htmlFor="productionOutput" className="text-sm font-medium">
+                  {formData.recordType === "PRODUCTION" ? "Production Output *" : "Breeding Output"}
+                </label>
+                <Input
+                  id="productionOutput"
+                  type="number"
+                  step="0.1"
+                  placeholder="0.0"
+                  value={formData.productionOutput}
+                  onChange={(e) => handleChange("productionOutput", e.target.value)}
+                  required={formData.recordType === "PRODUCTION"}
+                />
+                {errors.productionOutput && <p className="text-red-500 text-sm">{errors.productionOutput}</p>}
+              </div>
+            )}
           </div>
 
           {/* Mortality Count (only show for mortality records) */}
           {formData.recordType === "MORTALITY" && (
             <div className="space-y-2">
-              <Label htmlFor="mortalityCount">Mortality Count</Label>
+              <label htmlFor="mortalityCount" className="text-sm font-medium">Mortality Count *</label>
               <Input
                 id="mortalityCount"
                 type="number"
@@ -392,7 +371,6 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
                 placeholder="0"
                 value={formData.mortalityCount}
                 onChange={(e) => handleChange("mortalityCount", e.target.value)}
-                className={errors.mortalityCount ? "border-red-500" : ""}
               />
               {errors.mortalityCount && <p className="text-red-500 text-sm">{errors.mortalityCount}</p>}
             </div>
@@ -401,30 +379,30 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
           {/* Observations and Notes */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="observations">Observations</Label>
-              <Textarea
+              <label htmlFor="observations" className="text-sm font-medium">Observations</label>
+              <textarea
                 id="observations"
-                placeholder="Record any observations about the animal(s)..."
+                placeholder="Record any observations about the batch..."
                 value={formData.observations}
                 onChange={(e) => handleChange("observations", e.target.value)}
-                rows={3}
+                className="w-full rounded border border-gray-300 p-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-green-600"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea
+              <label htmlFor="notes" className="text-sm font-medium">Additional Notes</label>
+              <textarea
                 id="notes"
                 placeholder="Any additional notes or comments..."
                 value={formData.notes}
                 onChange={(e) => handleChange("notes", e.target.value)}
-                rows={2}
+                className="w-full rounded border border-gray-300 p-2 min-h-[60px] focus:outline-none focus:ring-2 focus:ring-green-600"
               />
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex justify-end space-x-2 pt-4 border-t">
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
@@ -432,7 +410,6 @@ export function AnimalRecordForm({ recordId, onClose, onSaved }: AnimalRecordFor
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

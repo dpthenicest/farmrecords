@@ -11,8 +11,8 @@ export async function getSuppliers(user: any, { page, limit, sortBy, order, filt
     where.createdAt = { gte: new Date(filters.startDate), lte: new Date(filters.endDate) };
   }
 
-  if (user.role !== "ADMIN") {
-    where.userId = user.id;
+  if (user.role !== "ADMIN" && user.role !== "OWNER") {
+    where.userId = Number(user.id);
   }
 
   const total = await prisma.supplier.count({ where });
@@ -41,14 +41,14 @@ export async function getSuppliers(user: any, { page, limit, sortBy, order, filt
 
 export async function getSupplierById(user: any, id: number) {
   return prisma.supplier.findUniqueOrThrow({
-    where: { id, ...(user.role !== "ADMIN" ? { userId: user.id } : {}) },
+    where: { id, ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}) },
   });
 }
 
 export async function createSupplier(user: any, data: any) {
   return prisma.supplier.create({
     data: {
-      userId: user.id,
+      userId: Number(user.id),
       supplierName: data.supplierName,
       supplierCode: data.supplierCode,
       businessName: data.businessName,
@@ -77,7 +77,7 @@ export async function createSupplier(user: any, data: any) {
 
 export async function updateSupplier(user: any, id: number, data: any) {
   return prisma.supplier.update({
-    where: { id, ...(user.role !== "ADMIN" ? { userId: user.id } : {}) },
+    where: { id, ...(user.role !== "ADMIN" && user.role !== "OWNER" ? { userId: Number(user.id) } : {}) },
     data,
   });
 }

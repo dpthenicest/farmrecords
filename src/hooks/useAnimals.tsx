@@ -40,11 +40,21 @@ export function useAnimals(filters?: AnimalFilters) {
       if (filters?.endDate) query.append("endDate", filters.endDate)
 
       const res = await fetch(`/api/animals?${query.toString()}`, { credentials: "include" })
-      if (!res.ok) throw new Error("Failed to fetch animals")
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Authentication required. Please log in.")
+        } else if (res.status === 403) {
+          throw new Error("Access denied. Insufficient permissions.")
+        } else {
+          throw new Error(`Failed to fetch animals (${res.status})`)
+        }
+      }
 
       const json = await res.json()
-      setAnimals(json.data || json.data?.animals || [])
-      setTotalPages(json.pagination?.pages || 1)
+      // Handle nested data structure: json.data.data contains the animals array
+      setAnimals(json.data?.data || [])
+      setTotalPages(json.data?.pagination?.pages || 1)
     } catch (err: any) {
       setError(err)
     } finally {
@@ -75,7 +85,7 @@ export function useAnimal(id?: number) {
         if (!res.ok) throw new Error("Failed to fetch animal")
         return res.json()
       })
-      .then(json => mounted && setAnimal(json.data))
+      .then(json => mounted && setAnimal(json.data?.data || json.data))
       .catch(err => mounted && setError(err))
       .finally(() => mounted && setLoading(false))
 
@@ -101,7 +111,7 @@ export function useAnimalsByBatch(batchId?: number) {
         if (!res.ok) throw new Error("Failed to fetch animals by batch")
         return res.json()
       })
-      .then(json => mounted && setAnimals(json.data || []))
+      .then(json => mounted && setAnimals(json.data?.data || json.data || []))
       .catch(err => mounted && setError(err))
       .finally(() => mounted && setLoading(false))
 
@@ -128,7 +138,7 @@ export function useCreateAnimal() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Failed to create animal")
-      return json.data
+      return json.data?.data || json.data
     } catch (err: any) {
       setError(err)
       throw err
@@ -157,7 +167,7 @@ export function useUpdateAnimal() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Failed to update animal")
-      return json.data
+      return json.data?.data || json.data
     } catch (err: any) {
       setError(err)
       throw err

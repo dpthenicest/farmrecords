@@ -28,6 +28,14 @@ interface ActionMenuProps {
   showMarkPaid?: boolean
   showReceive?: boolean
   showAdjust?: boolean
+  
+  loading?: {
+    sending?: boolean
+    markingPaid?: boolean
+    deleting?: boolean
+    receiving?: boolean
+    adjusting?: boolean
+  }
 }
 
 export function ActionMenu({
@@ -46,6 +54,8 @@ export function ActionMenu({
   showMarkPaid = false, // Defaulting to false since these are invoice-specific
   showReceive = false,
   showAdjust = false,
+  
+  loading = {},
 }: ActionMenuProps) {
   return (
     <DropdownMenu>
@@ -65,29 +75,49 @@ export function ActionMenu({
         
         {/* Send Action (NEW) */}
         {showSend && (
-          <DropdownMenuItem onClick={onSend} className="flex justify-start text-blue-600 focus:bg-blue-50">
-            <Send className="mr-2 h-4 w-4" /> Send
+          <DropdownMenuItem 
+            onClick={onSend} 
+            className="flex justify-start text-blue-600 focus:bg-blue-50"
+            disabled={loading.sending}
+          >
+            <Send className="mr-2 h-4 w-4" /> 
+            {loading.sending ? "Sending..." : "Send"}
           </DropdownMenuItem>
         )}
 
         {/* Mark Paid Action (NEW) */}
         {showMarkPaid && (
-          <DropdownMenuItem onClick={onMarkPaid} className="flex justify-start text-green-700 focus:bg-green-100">
-            <CheckCircle className="mr-2 h-4 w-4" /> Mark Paid
+          <DropdownMenuItem 
+            onClick={onMarkPaid} 
+            className="flex justify-start text-green-700 focus:bg-green-100"
+            disabled={loading.markingPaid}
+          >
+            <CheckCircle className="mr-2 h-4 w-4" /> 
+            {loading.markingPaid ? "Processing..." : "Mark Paid"}
           </DropdownMenuItem>
         )}
 
         {/* Receive Action */}
         {showReceive && (
-          <DropdownMenuItem onClick={onReceive} className="flex justify-start text-purple-600 focus:bg-purple-50">
-            <CheckCircle className="mr-2 h-4 w-4" /> Receive
+          <DropdownMenuItem 
+            onClick={onReceive} 
+            className="flex justify-start text-purple-600 focus:bg-purple-50"
+            disabled={loading.receiving}
+          >
+            <CheckCircle className="mr-2 h-4 w-4" /> 
+            {loading.receiving ? "Processing..." : "Receive"}
           </DropdownMenuItem>
         )}
 
         {/* Adjust Action */}
         {showAdjust && (
-          <DropdownMenuItem onClick={onAdjust} className="flex justify-start text-blue-600 focus:bg-blue-50">
-            <Settings className="mr-2 h-4 w-4" /> Adjust Stock
+          <DropdownMenuItem 
+            onClick={onAdjust} 
+            className="flex justify-start text-blue-600 focus:bg-blue-50"
+            disabled={loading.adjusting}
+          >
+            <Settings className="mr-2 h-4 w-4" /> 
+            {loading.adjusting ? "Adjusting..." : "Adjust Stock"}
           </DropdownMenuItem>
         )}
 
@@ -103,8 +133,10 @@ export function ActionMenu({
           <DropdownMenuItem
             onClick={onDelete}
             className="text-red-600 focus:bg-red-50 flex justify-start"
+            disabled={loading.deleting}
           >
-            <Trash className="mr-2 h-4 w-4" /> Delete
+            <Trash className="mr-2 h-4 w-4" /> 
+            {loading.deleting ? "Deleting..." : "Delete"}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

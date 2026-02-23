@@ -17,7 +17,7 @@ const TEST_USER_EMAIL = 'test-crud@example.com'
 
 describe('Property 1: CRUD Operations Consistency', () => {
   beforeEach(async () => {
-    // Clean up any existing test data
+    // Clean up any existing test data in correct order (children first)
     await prisma.animalRecord.deleteMany({ where: { userId: TEST_USER_ID } })
     await prisma.animal.deleteMany({ where: { userId: TEST_USER_ID } })
     await prisma.animalBatch.deleteMany({ where: { userId: TEST_USER_ID } })
@@ -206,7 +206,7 @@ describe('Property 1: CRUD Operations Consistency', () => {
       fc.asyncProperty(
         fc.record({
           assetName: fc.string({ minLength: 1, maxLength: 100 }),
-          assetCode: fc.uuid().map(uuid => `ASSET_${uuid.replace(/-/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+          assetCode: fc.uuid().map(uuid => `ASSET_${uuid.replace(/-/g, '_')}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${Math.floor(Math.random() * 1000000)}`),
           assetType: fc.constantFrom('INFRASTRUCTURE', 'EQUIPMENT', 'VEHICLES'),
           purchaseCost: fc.float({ min: 1, max: Math.fround(100000), noNaN: true }),
           salvageValue: fc.float({ min: 0, max: Math.fround(50000), noNaN: true }),

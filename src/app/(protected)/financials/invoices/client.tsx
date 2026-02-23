@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useInvoices } from "@/hooks/useInvoices"
+import { useInvoices, useSendInvoice, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices"
 import { InvoiceTable } from "./_components/InvoiceTable"
 import { InvoiceFilters } from "./_components/InvoiceFilters"
 import { InvoiceDetails } from "./_components/InvoiceDetails"
@@ -49,6 +49,11 @@ export default function InvoicesClient() {
   const [showForm, setShowForm] = React.useState(false)
   const [selectedInvoice, setSelectedInvoice] = React.useState<any>(null)
 
+  // Action hooks
+  const { sendInvoice, loading: sending } = useSendInvoice()
+  const { markPaid, loading: markingPaid } = useMarkInvoicePaid()
+  const { deleteInvoice, loading: deleting } = useDeleteInvoice()
+
   const handleApplyFilters = () => {
     setAppliedFilters({
       search: pendingSearch,
@@ -62,6 +67,61 @@ export default function InvoicesClient() {
   const handleDateChange = (range: { start: string; end: string }) => {
     setPendingStartDate(range.start)
     setPendingEndDate(range.end)
+  }
+
+  // Action handlers
+  const handleSendInvoice = async (invoice: any) => {
+    if (invoice.status !== 'DRAFT') {
+      alert('Only draft invoices can be sent')
+      return
+    }
+
+    if (confirm(`Are you sure you want to send invoice ${invoice.invoiceNumber}?`)) {
+      try {
+        await sendInvoice(invoice.id)
+        refetch() // Refresh the list
+        alert('Invoice sent successfully!')
+      } catch (error) {
+        console.error('Failed to send invoice:', error)
+        alert('Failed to send invoice. Please try again.')
+      }
+    }
+  }
+
+  const handleMarkPaid = async (invoice: any) => {
+    if (invoice.status !== 'SENT' && invoice.status !== 'OVERDUE') {
+      alert('Only sent or overdue invoices can be marked as paid')
+      return
+    }
+
+    if (confirm(`Are you sure you want to mark invoice ${invoice.invoiceNumber} as paid?`)) {
+      try {
+        await markPaid(invoice.id)
+        refetch() // Refresh the list
+        alert('Invoice marked as paid successfully!')
+      } catch (error) {
+        console.error('Failed to mark invoice as paid:', error)
+        alert('Failed to mark invoice as paid. Please try again.')
+      }
+    }
+  }
+
+  const handleDeleteInvoice = async (invoice: any) => {
+    if (invoice.status === 'PAID') {
+      alert('Paid invoices cannot be deleted')
+      return
+    }
+
+    if (confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`)) {
+      try {
+        await deleteInvoice(invoice.id)
+        refetch() // Refresh the list
+        alert('Invoice deleted successfully!')
+      } catch (error) {
+        console.error('Failed to delete invoice:', error)
+        alert('Failed to delete invoice. Please try again.')
+      }
+    }
   }
 
   return (
@@ -104,9 +164,14 @@ export default function InvoicesClient() {
               setSelectedInvoice(invoice)
               setShowForm(true)
             }}
-            onDelete={(invoice) => console.log("delete", invoice)}
-            onSend={(invoice) => console.log("send", invoice)}
-            onMarkPaid={(invoice) => console.log("paid", invoice)}
+            onDelete={handleDeleteInvoice}
+            onSend={handleSendInvoice}
+            onMarkPaid={handleMarkPaid}
+            actionLoading={{
+              sending,
+              markingPaid,
+              deleting,
+            }}
           />
         </CardContent>
       </Card>
@@ -116,9 +181,17 @@ export default function InvoicesClient() {
         open={!!selectedInvoice && !showForm}
         onOpenChange={() => setSelectedInvoice(null)}
         title="Invoice Details"
+        size="large"
       >
         {selectedInvoice && (
-          <InvoiceDetails invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
+          <InvoiceDetails 
+            invoice={selectedInvoice} 
+            onClose={() => setSelectedInvoice(null)}
+            onInvoiceUpdated={() => {
+              refetch() // Refresh the invoice list
+              setSelectedInvoice(null) // Close the modal
+            }}
+          />
         )}
       </Modal>
       {/* Large Modal for Invoice Form */}

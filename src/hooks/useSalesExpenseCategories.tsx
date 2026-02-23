@@ -38,7 +38,7 @@ export function useSalesExpenseCategories(filters?: CategoryFilters) {
       if (!res.ok) throw new Error("Failed to fetch categories")
 
       const json = await res.json()
-      setCategories(json.data || json.data?.categories || [])
+      setCategories(json.data || [])
       setTotalPages(json.pagination?.pages || 1)
     } catch (err: any) {
       setError(err)

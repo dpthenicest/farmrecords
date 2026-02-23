@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth"
+import { Successes, Errors } from "@/lib/responses"
 import { purchaseOrderService } from "@/services/purchaseOrderService"
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   try {
     const auth = await requireAuth()
-    if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 401 })
+    if (!auth.authorized) return Errors.Unauthorized()
 
     const sent = await purchaseOrderService.sendPurchaseOrder(
       Number(params.id),
@@ -13,10 +14,10 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       auth.user?.role
     )
 
-    if (!sent) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    return NextResponse.json(sent)
+    if (!sent) return Errors.NotFound()
+    return Successes.Ok(sent)
   } catch (error) {
     console.error("Error sending purchase order:", error)
-    return NextResponse.json({ error: "Failed to send purchase order" }, { status: 500 })
+    return Errors.Internal()
   }
 }

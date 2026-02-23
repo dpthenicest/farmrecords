@@ -221,7 +221,7 @@ describe('Property 3: Form Validation Consistency', () => {
           purchaseWeight: fc.oneof(fc.constant("invalid"), fc.constant("abc")), // Invalid: non-numeric
           currentWeight: fc.oneof(fc.constant("invalid"), fc.constant("xyz")), // Invalid: non-numeric
           purchaseCost: fc.oneof(fc.constant("invalid"), fc.constant("not-a-number")), // Invalid: non-numeric
-          birthDate: fc.date({ min: new Date(Date.now() + 24 * 60 * 60 * 1000) }).map(d => d.toISOString().split('T')[0]) // Invalid: future date
+          birthDate: fc.constant(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Invalid: future date
         }),
         async (invalidAnimalData) => {
           const result = validateAnimalData(invalidAnimalData)
@@ -363,7 +363,7 @@ describe('Property 3: Form Validation Consistency', () => {
             fc.record({
               invoiceNumber: fc.constant(invoiceNumber),
               invoiceDate: fc.constant(invoiceDate),
-              dueDate: fc.date({ min: new Date(invoiceDate.getTime() + 24 * 60 * 60 * 1000) }) // At least 1 day after invoice date
+              dueDate: fc.constant(new Date(invoiceDate.getTime() + 24 * 60 * 60 * 1000)) // At least 1 day after invoice date
             })
           ),
           
